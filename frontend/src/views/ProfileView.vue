@@ -1,0 +1,18 @@
+<template>
+  <v-container>
+    <v-row>
+      <v-col cols="12">
+        <h1 class="text-h4 mb-4">Mi Perfil</h1>
+        <v-card>
+          <v-card-text>
+            <p>Información del perfil del usuario.</p>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
+</template>
+
+<script setup lang="ts">
+// Lógica del perfil
+</script> 

@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: bnkr-postgres
+    environment:
+      POSTGRES_DB: bnkr_gym
+      POSTGRES_USER: bnkr_user
+      POSTGRES_PASSWORD: bnkr_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - bnkr-network
+    restart: unless-stopped
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bnkr-backend
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://bnkr_user:bnkr_password@postgres:5432/bnkr_gym
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      CORS_ORIGIN: http://localhost:80
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+    networks:
+      - bnkr-network
+    restart: unless-stopped
+    volumes:
+      - ./backend/logs:/app/logs
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: bnkr-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - bnkr-network
+    restart: unless-stopped
+
+  # Nginx reverse proxy (opcional, para producción)
+  nginx:
+    image: nginx:alpine
+    container_name: bnkr-nginx
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - bnkr-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  bnkr-network:
+    driver: bridge 
