@@ -153,31 +153,42 @@ export class AuthService {
       { expiresIn: '1h' }
     );
 
-    // Enviar email con link de reset
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
-    
-    const resetEmailHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Restablecer Contraseña - BNKR</h2>
-        <p>Hola ${user.name},</p>
-        <p>Has solicitado restablecer tu contraseña.</p>
-        <p>Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
-        <a href="${resetLink}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 20px 0;">
-          Restablecer Contraseña
-        </a>
-        <p>Este enlace expirará en 1 hora.</p>
-        <p>Si no solicitaste este cambio, puedes ignorar este email.</p>
-        <p>Equipo BNKR</p>
-      </div>
-    `;
+    // Enviar email con link de reset (opcional)
+    if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      try {
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+        
+        const resetEmailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Restablecer Contraseña - BNKR</h2>
+            <p>Hola ${user.name},</p>
+            <p>Has solicitado restablecer tu contraseña.</p>
+            <p>Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
+            <a href="${resetLink}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 20px 0;">
+              Restablecer Contraseña
+            </a>
+            <p>Este enlace expirará en 1 hora.</p>
+            <p>Si no solicitaste este cambio, puedes ignorar este email.</p>
+            <p>Equipo BNKR</p>
+          </div>
+        `;
 
-    await sendEmail(
-      user.email,
-      'Restablecer Contraseña - BNKR',
-      resetEmailHtml
-    );
+        await sendEmail(
+          user.email,
+          'Restablecer Contraseña - BNKR',
+          resetEmailHtml
+        );
 
-    return { message: 'Se ha enviado un email con instrucciones para restablecer tu contraseña' };
+        return { message: 'Se ha enviado un email con instrucciones para restablecer tu contraseña' };
+      } catch (error) {
+        console.error('Error enviando email de reset:', error);
+        // No fallar si el email falla, pero informar al usuario
+        return { message: 'Tu solicitud fue procesada, pero hubo un problema enviando el email. Contacta al administrador.' };
+      }
+    } else {
+      // Si no hay configuración de email, solo informar
+      return { message: 'Tu solicitud fue procesada. Contacta al administrador para restablecer tu contraseña.' };
+    }
   }
 
   static async confirmResetPassword(token: string, newPassword: string) {
