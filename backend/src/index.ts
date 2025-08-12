@@ -24,6 +24,9 @@ dotenv.config();
 const app = express();
 const server = createServer(app);
 
+// Configurar para confiar en proxies (Nginx)
+app.set('trust proxy', true);
+
 // Configuración de Socket.IO
 const io = new Server(server, {
   cors: {
