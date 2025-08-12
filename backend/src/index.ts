@@ -25,7 +25,7 @@ const app = express();
 const server = createServer(app);
 
 // Configurar para confiar en proxies (Nginx)
-app.set('trust proxy', true);
+app.set('trust proxy', '127.0.0.1');
 
 // Configuración de Socket.IO
 const io = new Server(server, {
