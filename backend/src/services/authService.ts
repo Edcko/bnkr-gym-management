@@ -45,7 +45,8 @@ export class AuthService {
       }
     });
 
-    // Enviar email de bienvenida (opcional)
+    // Enviar email de bienvenida (opcional) - COMENTADO TEMPORALMENTE
+    /*
     if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       try {
         await sendEmail(
@@ -58,6 +59,7 @@ export class AuthService {
         // No fallar el registro si el email falla
       }
     }
+    */
 
     // Generar token JWT
     const token = this.generateToken(user);
