@@ -4,13 +4,20 @@ import { useLanguage } from '@/stores/language'
 import { useAuth } from '@/stores/auth'
 import { t } from '@/utils/translations'
 import { onMounted } from 'vue'
+import { useThemeStore } from '@/stores/theme'
 
 const language = useLanguage()
 const auth = useAuth()
 
+// Inicializar tema
+const themeStore = useThemeStore()
+
 onMounted(() => {
   language.initLanguage()
   auth.initAuth()
+  // Inicializar tema y configurar listener para cambios del sistema
+  themeStore.initTheme()
+  themeStore.setupSystemThemeListener()
 })
 
 // Aplicación con navbar elegante
@@ -161,6 +168,7 @@ body {
   font-family: 'Roboto', sans-serif;
   background: #1a1a1a;
   color: white;
+  padding-top: 0; /* Asegurar que no haya padding adicional */
 }
 
 .v-application {
@@ -169,6 +177,10 @@ body {
 
 .v-main {
   padding: 0 !important;
+  padding-top: 80px !important; /* Espacio para el navbar fijo */
+  min-height: calc(100vh - 80px); /* Altura mínima considerando el navbar */
+  position: relative;
+  z-index: 1; /* Z-index menor que el navbar */
 }
 
 /* Navbar - Estilo Modest Muscle */
@@ -181,6 +193,7 @@ body {
   right: 0;
   z-index: 1000;
   backdrop-filter: blur(10px);
+  height: 80px; /* Altura fija para el navbar */
 }
 
 .logo-container {
@@ -347,9 +360,35 @@ body {
   }
 }
 
+/* Asegurar que todas las páginas tengan el espaciado correcto */
+.dashboard-page,
+.classes-page,
+.reservations-page,
+.membership-page,
+.profile-page {
+  padding-top: 0 !important; /* El padding-top ya está en .v-main */
+}
+
+/* Asegurar que el contenido principal no se superponga con el navbar */
+.v-application {
+  background: #1a1a1a !important;
+  padding-top: 0 !important;
+}
+
+/* Asegurar que el router-view tenga el espaciado correcto */
+.router-view {
+  padding-top: 0 !important;
+}
+
 @media (max-width: 768px) {
   .navbar-modest {
     padding: 15px 20px;
+    height: 70px; /* Altura menor en móviles */
+  }
+  
+  .v-main {
+    padding-top: 70px !important; /* Ajustar padding para móviles */
+    min-height: calc(100vh - 70px);
   }
   
   .nav-center {

@@ -1,0 +1,115 @@
+/* ===== VARIABLES DE TEMA BNKR ===== */
+
+/* Modo Oscuro (por defecto) */
+:root {
+  /* Colores principales */
+  --bnkr-primary: #ff4444;
+  --bnkr-primary-dark: #cc0000;
+  --bnkr-primary-light: #ff6666;
+  
+  /* Colores de fondo */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #2a2a2a;
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-overlay: rgba(0, 0, 0, 0.9);
+  
+  /* Colores de texto */
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-tertiary: #999999;
+  --text-muted: #666666;
+  
+  /* Colores de borde */
+  --border-primary: rgba(255, 68, 68, 0.2);
+  --border-secondary: rgba(255, 255, 255, 0.1);
+  --border-muted: #333333;
+  
+  /* Colores de estado */
+  --success: #4caf50;
+  --warning: #ff9800;
+  --error: #f44336;
+  --info: #2196f3;
+  
+  /* Sombras */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 25px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.3);
+  
+  /* Efectos */
+  --blur: blur(20px);
+  --gradient-primary: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  --gradient-bg: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
+}
+
+/* Modo Claro */
+:root.light {
+  /* Colores principales (mantienen identidad BNKR) */
+  --bnkr-primary: #ff4444;
+  --bnkr-primary-dark: #cc0000;
+  --bnkr-primary-light: #ff6666;
+  
+  /* Colores de fondo (invertidos) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  --bg-card: rgba(255, 255, 255, 0.98);
+  --bg-overlay: rgba(255, 255, 255, 0.95);
+  
+  /* Colores de texto (invertidos) */
+  --text-primary: #1a1a1a;
+  --text-secondary: #333333;
+  --text-tertiary: #666666;
+  --text-muted: #999999;
+  
+  /* Colores de borde */
+  --border-primary: rgba(255, 68, 68, 0.3);
+  --border-secondary: rgba(0, 0, 0, 0.1);
+  --border-muted: #dee2e6;
+  
+  /* Colores de estado (mantienen) */
+  --success: #4caf50;
+  --warning: #ff9800;
+  --error: #f44336;
+  --info: #2196f3;
+  
+  /* Sombras (adaptadas para light mode) */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 8px 25px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.1);
+  
+  /* Efectos */
+  --blur: blur(20px);
+  --gradient-primary: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  --gradient-bg: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
+}
+
+/* Transiciones suaves para cambios de tema */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Aplicar variables a elementos específicos */
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Clases utilitarias para temas */
+.bg-primary { background-color: var(--bg-primary); }
+.bg-secondary { background-color: var(--bg-secondary); }
+.bg-tertiary { background-color: var(--bg-tertiary); }
+.bg-card { background-color: var(--bg-card); }
+
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+.text-muted { color: var(--text-muted); }
+
+.border-primary { border-color: var(--border-primary); }
+.border-secondary { border-color: var(--border-secondary); }
+.border-muted { border-color: var(--border-muted); }
+
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }

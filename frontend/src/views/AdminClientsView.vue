@@ -80,7 +80,7 @@
                     variant="outlined"
                     density="compact"
                     clearable
-                    @update:model-value="clientsStore.searchClients"
+                    @update:model-value="handleSearch"
                   />
                 </v-col>
                 <v-col cols="12" md="3">
@@ -90,13 +90,13 @@
                     label="Estado"
                     variant="outlined"
                     density="compact"
-                    @update:model-value="clientsStore.setFilterStatus"
+                    @update:model-value="handleStatusFilter"
                   />
                 </v-col>
                 <v-col cols="12" md="3">
                   <v-btn
                     variant="outlined"
-                    @click="clientsStore.clearFilters"
+                    @click="clearFilters"
                     prepend-icon="mdi-filter-remove"
                   >
                     Limpiar Filtros
@@ -114,7 +114,7 @@
           <v-card>
             <v-data-table
               :headers="headers"
-              :items="clientsStore.filteredClients"
+                                  :items="clientsStore.filteredItems"
               :loading="clientsStore.loading"
               :items-per-page="10"
               class="elevation-1"
@@ -177,84 +177,98 @@
     </v-container>
 
     <!-- Create/Edit Dialog -->
-    <v-dialog v-model="showDialog" max-width="600px">
+    <v-dialog v-model="showDialog" max-width="600px" persistent>
       <v-card>
         <v-card-title>
           {{ isEditing ? 'Editar Cliente' : 'Nuevo Cliente' }}
         </v-card-title>
         <v-card-text>
-          <v-form ref="form" v-model="formValid">
+          <v-form ref="formRef" v-model="formValid">
             <v-row>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.name"
+                  v-model="formData.name"
                   label="Nombre completo"
                   variant="outlined"
                   :rules="[rules.required]"
                   required
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.email"
+                  v-model="formData.email"
                   label="Email"
                   type="email"
                   variant="outlined"
                   :rules="[rules.required, rules.email]"
                   required
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.phone"
+                  v-model="formData.phone"
                   label="Teléfono"
                   variant="outlined"
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.dateOfBirth"
+                  v-model="formData.dateOfBirth"
                   label="Fecha de nacimiento"
                   type="date"
                   variant="outlined"
+                  clearable
                 />
               </v-col>
               <v-col cols="12">
                 <v-textarea
-                  v-model="form.address"
+                  v-model="formData.address"
                   label="Dirección"
                   variant="outlined"
                   rows="2"
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.emergencyContact"
+                  v-model="formData.emergencyContact"
                   label="Contacto de emergencia"
                   variant="outlined"
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.emergencyPhone"
+                  v-model="formData.emergencyPhone"
                   label="Teléfono de emergencia"
                   variant="outlined"
+                  clearable
                 />
               </v-col>
               <v-col cols="12" v-if="!isEditing">
                 <v-text-field
-                  v-model="form.password"
+                  v-model="formData.password"
                   label="Contraseña"
                   type="password"
                   variant="outlined"
                   :rules="[rules.required, rules.password]"
                   required
+                  clearable
                 />
               </v-col>
             </v-row>
           </v-form>
         </v-card-text>
         <v-card-actions>
+          <v-btn
+            variant="outlined"
+            @click="clearForm"
+          >
+            Limpiar
+          </v-btn>
           <v-spacer />
           <v-btn
             variant="outlined"
@@ -386,12 +400,13 @@ const searchQuery = ref('')
 const filterStatus = ref<'all' | 'active' | 'inactive'>('all')
 
 // Form data
-const form = ref<CreateClientData & { id?: string }>({
+const formRef = ref()
+const formData = ref<CreateClientData & { id?: string }>({
   name: '',
   email: '',
   password: '',
   phone: '',
-  dateOfBirth: '',
+  dateOfBirth: undefined,
   address: '',
   emergencyContact: '',
   emergencyPhone: ''
@@ -433,23 +448,43 @@ const rules = {
 }
 
 // Computed
-const stats = computed(() => clientsStore.getClientStats())
+const stats = computed(() => ({
+  total: clientsStore.allItems.length,
+  active: clientsStore.activeClients.length,
+  inactive: clientsStore.inactiveClients.length
+}))
 
 // Methods
 const loadClients = async () => {
-  await clientsStore.fetchClients(clientsStore.currentPage)
+  await clientsStore.fetchAll()
+}
+
+const handleSearch = (query: string) => {
+  clientsStore.setSearchQuery(query)
+}
+
+const handleStatusFilter = (status: string) => {
+  if (status === 'all') {
+    clientsStore.clearFilters()
+  } else {
+    clientsStore.setFilter('isActive', status === 'active')
+  }
+}
+
+const clearFilters = () => {
+  clientsStore.clearFilters()
 }
 
 const openCreateDialog = () => {
   isEditing.value = false
-  resetForm()
+  clearForm()
   showDialog.value = true
 }
 
 const editClient = (client: Client) => {
   isEditing.value = true
   selectedClient.value = client
-  form.value = {
+  formData.value = {
     id: client.id,
     name: client.name,
     email: client.email,
@@ -470,7 +505,12 @@ const viewClient = (client: Client) => {
 
 const toggleClientStatus = async (client: Client) => {
   try {
-    await clientsStore.toggleClientStatus(client.id)
+    if (client.isActive) {
+      await clientsStore.deactivateClient(client.id)
+    } else {
+      await clientsStore.activateClient(client.id)
+    }
+    await loadClients()
   } catch (error) {
     console.error('Error toggling client status:', error)
   }
@@ -488,6 +528,7 @@ const confirmDelete = async () => {
     await clientsStore.deleteClient(selectedClient.value.id)
     showDeleteDialog.value = false
     selectedClient.value = null
+    await loadClients()
   } catch (error) {
     console.error('Error deleting client:', error)
   }
@@ -497,50 +538,53 @@ const saveClient = async () => {
   if (!formValid.value) return
 
   try {
-    if (isEditing.value && form.value.id) {
+    if (isEditing.value && formData.value.id) {
       const updateData: UpdateClientData = {
-        name: form.value.name,
-        email: form.value.email,
-        phone: form.value.phone,
-        dateOfBirth: form.value.dateOfBirth,
-        address: form.value.address,
-        emergencyContact: form.value.emergencyContact,
-        emergencyPhone: form.value.emergencyPhone
+        name: formData.value.name,
+        email: formData.value.email,
+        phone: formData.value.phone,
+        dateOfBirth: formData.value.dateOfBirth || undefined,
+        address: formData.value.address,
+        emergencyContact: formData.value.emergencyContact,
+        emergencyPhone: formData.value.emergencyPhone
       }
-      await clientsStore.updateClient(form.value.id, updateData)
+      console.log('📝 saveClient - Actualizando cliente:', formData.value.id)
+      console.log('📝 saveClient - Datos de actualización:', updateData)
+      await clientsStore.updateClient(formData.value.id, updateData)
     } else {
       const createData: CreateClientData = {
-        name: form.value.name,
-        email: form.value.email,
-        password: form.value.password,
-        phone: form.value.phone,
-        dateOfBirth: form.value.dateOfBirth,
-        address: form.value.address,
-        emergencyContact: form.value.emergencyContact,
-        emergencyPhone: form.value.emergencyPhone
+        name: formData.value.name,
+        email: formData.value.email,
+        password: formData.value.password,
+        phone: formData.value.phone,
+        dateOfBirth: formData.value.dateOfBirth || undefined,
+        address: formData.value.address,
+        emergencyContact: formData.value.emergencyContact,
+        emergencyPhone: formData.value.emergencyPhone
       }
+      console.log('📝 saveClient - Creando nuevo cliente')
+      console.log('📝 saveClient - Datos de creación:', createData)
       await clientsStore.createClient(createData)
     }
     
     closeDialog()
     await loadClients()
   } catch (error) {
-    console.error('Error saving client:', error)
+    console.error('❌ Error saving client:', error)
   }
 }
 
 const closeDialog = () => {
   showDialog.value = false
-  resetForm()
 }
 
-const resetForm = () => {
-  form.value = {
+const clearForm = () => {
+  formData.value = {
     name: '',
     email: '',
     password: '',
     phone: '',
-    dateOfBirth: '',
+    dateOfBirth: undefined,
     address: '',
     emergencyContact: '',
     emergencyPhone: ''
@@ -553,8 +597,9 @@ const formatDate = (dateString: string) => {
 }
 
 // Lifecycle
-onMounted(() => {
-  loadClients()
+onMounted(async () => {
+  await clientsStore.init()
+  await loadClients()
 })
 </script>
 

@@ -17,6 +17,11 @@ import userRoutes from './routes/users';
 import classRoutes from './routes/classes';
 import membershipRoutes from './routes/memberships';
 import reservationRoutes from './routes/reservations';
+import inventoryRoutes from './routes/inventory';
+import employeeRoutes from './routes/employees';
+import clientRoutes from './routes/clients';
+import paymentRoutes from './routes/payments';
+import reportRoutes from './routes/reports';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -30,7 +35,11 @@ app.set('trust proxy', '127.0.0.1');
 // Configuración de Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin: [
+      process.env.CORS_ORIGIN || "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:5175"
+    ],
     methods: ["GET", "POST"]
   }
 });
@@ -48,7 +57,11 @@ const limiter = rateLimit({
 // Middlewares de seguridad
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+  origin: [
+    process.env.CORS_ORIGIN || "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175"
+  ],
   credentials: true
 }));
 app.use(limiter);
@@ -96,12 +109,27 @@ const swaggerOptions = {
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
+// Endpoint de health check
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'BNKR Gym Management API está funcionando correctamente',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 // Rutas de la API
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/classes', classRoutes);
 app.use('/api/memberships', membershipRoutes);
 app.use('/api/reservations', reservationRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/employees', employeeRoutes);
+app.use('/api/clients', clientRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Documentación de la API
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

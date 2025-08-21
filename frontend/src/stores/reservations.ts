@@ -153,6 +153,27 @@ export const useReservationsStore = defineStore('reservations', () => {
     }
   }
 
+  const fetchAll = async () => {
+    try {
+      loading.value = true
+      console.log('🔄 Fetching all reservations...')
+      const response = await api.get('/reservations')
+      
+      if (response.data.success) {
+        reservations.value = response.data.data.reservations || []
+        totalReservations.value = response.data.data.total || 0
+        console.log('✅ Reservations loaded:', reservations.value.length)
+      } else {
+        console.error('❌ Error loading reservations:', response.data.message)
+      }
+    } catch (error) {
+      console.error('❌ Error fetching all reservations:', error)
+      toast.show('Error al cargar las reservas', 'error')
+    } finally {
+      loading.value = false
+    }
+  }
+
   const fetchUserReservations = async (status?: string) => {
     try {
       loading.value = true
@@ -364,13 +385,28 @@ export const useReservationsStore = defineStore('reservations', () => {
 
   const getReservationStats = async (): Promise<ReservationStats | null> => {
     try {
+      console.log('🔍 DEBUG: Calling api.get with path:', '/reservations/stats')
+      console.log('🔍 DEBUG: api baseURL:', (api as any).defaults?.baseURL)
+      
+      // Verificar si hay token
+      const token = localStorage.getItem('token')
+      console.log('🔍 DEBUG: Token exists:', !!token)
+      console.log('🔍 DEBUG: Token value:', token ? token.substring(0, 20) + '...' : 'No token')
+      
+      // Usar el patrón exitoso como en classes y users
       const response = await api.get('/reservations/stats')
+      
+      console.log('✅ DEBUG: Response received:', response.data)
       
       if (response.data.success) {
         return response.data.data
       }
-    } catch (error) {
-      console.error('Error fetching reservation stats:', error)
+    } catch (error: any) {
+      console.error('❌ DEBUG: Error details:', {
+        message: error.message,
+        type: error.type,
+        name: error.name
+      })
       toast.show('Error al cargar las estadísticas', 'error')
     }
     return null
@@ -462,6 +498,7 @@ export const useReservationsStore = defineStore('reservations', () => {
     pastReservations,
 
     // Actions
+    fetchAll,
     fetchReservations,
     fetchUserReservations,
     fetchUpcomingReservations,

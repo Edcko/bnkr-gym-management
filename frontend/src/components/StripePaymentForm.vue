@@ -63,11 +63,19 @@
 </template>
 
 <script setup lang="ts">
+// Add Stripe to window object for TypeScript
+declare global {
+  interface Window {
+    Stripe: any;
+  }
+}
+
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { usePaymentsStore } from '@/stores/payments'
 import { useToast } from '@/stores/toast'
+import { useAuth } from '@/stores/auth'
 
-interface Props {
+interface PaymentProps {
   amount: number
   currency?: string
   description: string
@@ -75,7 +83,7 @@ interface Props {
   reservationId?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<PaymentProps>(), {
   currency: 'USD'
 })
 
@@ -86,6 +94,7 @@ const emit = defineEmits<{
 
 const paymentsStore = usePaymentsStore()
 const toast = useToast()
+const userStore = useAuth()
 
 // Reactive data
 const loading = ref(false)
@@ -123,7 +132,11 @@ const initializeStripe = async () => {
     
     // Initialize Stripe with your publishable key
     // In production, this should come from environment variables
-    stripe.value = Stripe('pk_test_your_publishable_key_here')
+    if (Stripe && typeof Stripe === 'function') {
+      stripe.value = Stripe('pk_test_your_publishable_key_here')
+    } else {
+      throw new Error('Stripe no se pudo cargar correctamente')
+    }
     
     // Create elements instance
     elements.value = stripe.value.elements()
@@ -169,11 +182,14 @@ const handlePayment = async () => {
     cardError.value = ''
     
     // Create payment intent
-    const paymentIntent = await paymentsStore.createStripePaymentIntent(
-      props.amount,
-      props.currency.toLowerCase(),
-      props.description
-    )
+    const paymentIntent = await paymentsStore.create({
+      userId: userStore.user?.id || '',
+      membershipId: props.membershipId || '', // Required field
+      amount: props.amount,
+      method: 'CREDIT_CARD', // Default method for Stripe payments
+      status: 'PENDING',
+      description: props.description
+    })
     
     if (!paymentIntent) {
       throw new Error('Error al crear el intent de pago')
@@ -199,16 +215,12 @@ const handlePayment = async () => {
     
     if (confirmedIntent.status === 'succeeded') {
       // Confirm payment with backend
-      const payment = await paymentsStore.confirmStripePayment(paymentIntent.id)
+      const payment = await paymentsStore.confirmPayment(paymentIntent.id)
       
-      // Create payment record
-      await paymentsStore.createPayment({
-        amount: props.amount,
-        currency: props.currency,
-        paymentMethod: 'STRIPE',
-        description: props.description,
-        membershipId: props.membershipId,
-        reservationId: props.reservationId
+      // Update payment record with success
+      await paymentsStore.update(payment.id, {
+        status: 'COMPLETED',
+        stripePaymentId: confirmedIntent.id
       })
       
       toast.show('Pago procesado exitosamente', 'success')
@@ -291,13 +303,4 @@ onUnmounted(() => {
 .error-message {
   margin-bottom: 16px;
 }
-</style>
-
-<script>
-// Add Stripe to window object for TypeScript
-declare global {
-  interface Window {
-    Stripe: any;
-  }
-}
-</script> 
+</style> 

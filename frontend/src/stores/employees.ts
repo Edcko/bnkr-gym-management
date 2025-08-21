@@ -1,19 +1,20 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { api } from '@/utils/api'
 import { useToast } from './toast'
+import { api } from '@/utils/api'
 
+// Interfaces específicas para empleados
 export interface Employee {
   id: string
   name: string
   email: string
+  role: 'INSTRUCTOR' | 'SUPERVISOR' | 'MANAGER' | 'ADMIN'
   phone?: string
   dateOfBirth?: string
   address?: string
   emergencyContact?: string
   emergencyPhone?: string
   isActive: boolean
-  role: 'ADMIN' | 'INSTRUCTOR'
   createdAt: string
   updatedAt: string
 }
@@ -22,18 +23,7 @@ export interface CreateEmployeeData {
   name: string
   email: string
   password: string
-  role: 'ADMIN' | 'INSTRUCTOR'
-  phone?: string
-  dateOfBirth?: string
-  address?: string
-  emergencyContact?: string
-  emergencyPhone?: string
-}
-
-export interface UpdateEmployeeData {
-  name?: string
-  email?: string
-  role?: 'ADMIN' | 'INSTRUCTOR'
+  role: 'INSTRUCTOR' | 'SUPERVISOR' | 'MANAGER' | 'ADMIN'
   phone?: string
   dateOfBirth?: string
   address?: string
@@ -42,22 +32,50 @@ export interface UpdateEmployeeData {
   isActive?: boolean
 }
 
+export interface UpdateEmployeeData extends Partial<CreateEmployeeData> {
+  password?: string
+}
+
 export const useEmployeesStore = defineStore('employees', () => {
-  const employees = ref<Employee[]>([])
-  const currentEmployee = ref<Employee | null>(null)
-  const loading = ref(false)
-  const totalEmployees = ref(0)
-  const totalPages = ref(0)
-  const currentPage = ref(1)
-  const searchQuery = ref('')
-  const filterRole = ref<'all' | 'ADMIN' | 'INSTRUCTOR'>('all')
-  const filterStatus = ref<'all' | 'active' | 'inactive'>('all')
-
   const toast = useToast()
-
-  // Getters
-  const filteredEmployees = computed(() => {
+  
+  // Estado local para empleados
+  const employees = ref<Employee[]>([])
+  const loading = ref(false)
+  const saving = ref(false)
+  const deleting = ref(false)
+  const currentPage = ref(1)
+  const totalPages = ref(1)
+  const totalEmployees = ref(0)
+  const searchQuery = ref('')
+  const filterRole = ref<'all' | 'INSTRUCTOR' | 'SUPERVISOR' | 'MANAGER' | 'ADMIN'>('all')
+  const filterStatus = ref<'all' | 'active' | 'inactive'>('all')
+  
+  // Estado específico de empleados
+  const stats = ref({
+    totalEmployees: 0,
+    activeEmployees: 0,
+    instructors: 0,
+    supervisors: 0,
+    managers: 0,
+    admins: 0
+  })
+  
+  // Getters computados
+  const allItems = computed(() => {
+    console.log('🔍 allItems computed llamado, employees.value:', employees.value)
+    return employees.value
+  })
+  
+  const filteredItems = computed(() => {
+    console.log('🔍 filteredItems computed llamado, employees.value:', employees.value)
     let filtered = employees.value
+
+    // Verificar que employees.value sea un array
+    if (!Array.isArray(employees.value)) {
+      console.error('❌ employees.value no es un array:', employees.value)
+      return []
+    }
 
     // Filtrar por búsqueda
     if (searchQuery.value) {
@@ -76,7 +94,7 @@ export const useEmployeesStore = defineStore('employees', () => {
 
     // Filtrar por estado
     if (filterStatus.value !== 'all') {
-      filtered = filtered.filter(employee =>
+      filtered = filtered.filter(employee => 
         filterStatus.value === 'active' ? employee.isActive : !employee.isActive
       )
     }
@@ -84,89 +102,175 @@ export const useEmployeesStore = defineStore('employees', () => {
     return filtered
   })
 
-  const admins = computed(() => 
-    employees.value.filter(employee => employee.role === 'ADMIN')
-  )
+  const activeEmployees = computed(() => {
+    console.log('🔍 activeEmployees computed llamado, employees.value:', employees.value)
+    if (!Array.isArray(employees.value)) {
+      console.error('❌ employees.value no es un array en activeEmployees:', employees.value)
+      return []
+    }
+    return employees.value.filter(employee => employee.isActive)
+  })
 
-  const instructors = computed(() => 
-    employees.value.filter(employee => employee.role === 'INSTRUCTOR')
-  )
+  const supervisors = computed(() => {
+    console.log('🔍 supervisors computed llamado, employees.value:', employees.value)
+    if (!Array.isArray(employees.value)) {
+      console.error('❌ employees.value no es un array en supervisors:', employees.value)
+      return []
+    }
+    return employees.value.filter(employee => employee.role === 'SUPERVISOR')
+  })
 
-  const activeEmployees = computed(() => 
-    employees.value.filter(employee => employee.isActive)
-  )
+  const managers = computed(() => {
+    console.log('🔍 managers computed llamado, employees.value:', employees.value)
+    if (!Array.isArray(employees.value)) {
+      console.error('❌ employees.value no es un array en managers:', employees.value)
+      return []
+    }
+    return employees.value.filter(employee => employee.role === 'MANAGER')
+  })
 
-  const inactiveEmployees = computed(() => 
-    employees.value.filter(employee => !employee.isActive)
-  )
+  const admins = computed(() => {
+    console.log('🔍 admins computed llamado, employees.value:', employees.value)
+    if (!Array.isArray(employees.value)) {
+      console.error('❌ employees.value no es un array en admins:', employees.value)
+      return []
+    }
+    return employees.value.filter(employee => employee.role === 'ADMIN')
+  })
 
-  // Actions
-            const fetchEmployees = async (page: number = 1, limit: number = 10) => {
-            try {
-              loading.value = true
-              const response = await api.get(`/users?role=ADMIN,INSTRUCTOR&page=${page}&limit=${limit}`)
-              
-              if (response.data.success) {
-                employees.value = response.data.data.users
-                totalEmployees.value = response.data.data.total
-                totalPages.value = response.data.data.totalPages
-                currentPage.value = page
-              }
-            } catch (error) {
-              console.error('Error fetching employees:', error)
-              toast.show('Error al cargar los empleados', 'error')
-            } finally {
-              loading.value = false
-            }
-          }
+  const instructors = computed(() => {
+    console.log('🔍 instructors computed llamado, employees.value:', employees.value)
+    if (!Array.isArray(employees.value)) {
+      console.error('❌ employees.value no es un array en instructors:', employees.value)
+      return []
+    }
+    return employees.value.filter(employee => employee.role === 'INSTRUCTOR')
+  })
 
-  const fetchEmployeeById = async (id: string) => {
+  // Cargar estadísticas de empleados
+  const loadStats = async () => {
     try {
-      loading.value = true
-      const response = await api.get(`/users/${id}`)
+      console.log('📊 Llamando a /users/stats...')
+      const response = await api.get('/users/stats')
+      console.log('📊 Respuesta de stats:', response.data)
       
       if (response.data.success) {
-        currentEmployee.value = response.data.data
-        return response.data.data
+        // Calcular estadísticas específicas de empleados desde los datos de usuarios
+        const allUsers = employees.value
+        const instructorUsers = allUsers.filter(user => user.role === 'INSTRUCTOR')
+        const supervisorUsers = allUsers.filter(user => user.role === 'SUPERVISOR')
+        const managerUsers = allUsers.filter(user => user.role === 'MANAGER')
+        const adminUsers = allUsers.filter(user => user.role === 'ADMIN')
+        
+        stats.value = {
+          totalEmployees: allUsers.length,
+          activeEmployees: allUsers.filter(user => user.isActive).length,
+          instructors: instructorUsers.length,
+          supervisors: supervisorUsers.length,
+          managers: managerUsers.length,
+          admins: adminUsers.length
+        }
+        console.log('✅ Stats actualizados:', stats.value)
       }
     } catch (error) {
-      console.error('Error fetching employee:', error)
-      toast.showToast('Error al cargar el empleado', 'error')
-      return null
+      console.error('❌ Error cargando estadísticas:', error)
+      toast.show('Error al cargar estadísticas de empleados', 'error')
+    }
+  }
+  
+  // Métodos para cargar empleados
+  const fetchAll = async (page: number = 1, limit: number = 10) => {
+    try {
+      loading.value = true
+      // Cargar todos los usuarios y filtrar por rol INSTRUCTOR o EMPLOYEE
+      const response = await api.get(`/users?page=${page}&limit=${limit}`)
+      
+      if (response.data.success) {
+        console.log('📡 Respuesta recibida:', response.data)
+        
+        // Verificar si la respuesta tiene el formato esperado
+        if (response.data.data?.users) {
+          // Formato: { users: Array, total: number, totalPages: number, currentPage: number, limit: number }
+          // Filtrar solo usuarios con roles de empleados del gym
+          const allUsers = response.data.data.users as any[]
+          const filteredUsers = allUsers.filter((user: any) => 
+            user.role === 'INSTRUCTOR' || 
+            user.role === 'SUPERVISOR' || 
+            user.role === 'MANAGER' || 
+            user.role === 'ADMIN'
+          )
+          
+          employees.value = filteredUsers
+          totalEmployees.value = filteredUsers.length
+          totalPages.value = response.data.data.totalPages
+          currentPage.value = response.data.data.currentPage
+          console.log('✅ Empleados cargados (formato paginado):', employees.value.length)
+        } else if (Array.isArray(response.data.data)) {
+          // Formato simple: Array directo
+          const filteredUsers = (response.data.data as any[]).filter((user: any) => 
+            user.role === 'INSTRUCTOR' || 
+            user.role === 'SUPERVISOR' || 
+            user.role === 'MANAGER' || 
+            user.role === 'ADMIN'
+          )
+          employees.value = filteredUsers
+          totalEmployees.value = filteredUsers.length
+          totalPages.value = 1
+          currentPage.value = 1
+          console.log('✅ Empleados cargados (formato simple):', employees.value.length)
+        } else {
+          console.error('❌ Formato de respuesta no reconocido:', response.data.data)
+          employees.value = []
+          totalEmployees.value = 0
+          totalPages.value = 1
+          currentPage.value = 1
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error cargando empleados:', error)
+      toast.show('Error al cargar empleados', 'error')
+      employees.value = []
+      totalEmployees.value = 0
+      totalPages.value = 1
+      currentPage.value = 1
     } finally {
       loading.value = false
     }
   }
 
-            const createEmployee = async (employeeData: CreateEmployeeData) => {
-            try {
-              loading.value = true
-              const response = await api.post('/users', {
-                ...employeeData,
-                role: employeeData.role
-              })
-              
-              if (response.data.success) {
-                const newEmployee = response.data.data
-                employees.value.unshift(newEmployee)
-                totalEmployees.value++
-                toast.show('Empleado creado exitosamente', 'success')
-                return newEmployee
-              }
-            } catch (error: any) {
-              console.error('Error creating employee:', error)
-              const errorMessage = error.response?.data?.message || 'Error al crear el empleado'
-              toast.show(errorMessage, 'error')
-              throw error
-            } finally {
-              loading.value = false
-            }
-          }
-
-  const updateEmployee = async (id: string, employeeData: UpdateEmployeeData) => {
+  // Métodos específicos de empleados
+  const createEmployee = async (data: CreateEmployeeData) => {
     try {
-      loading.value = true
-      const response = await api.put(`/users/${id}`, employeeData)
+      saving.value = true
+      console.log('📡 createEmployee - Llamando a POST /users')
+      console.log('📡 createEmployee - Datos enviados:', data)
+      const response = await api.post('/users', data)
+      
+      if (response.data.success) {
+        const newEmployee = response.data.data
+        employees.value.unshift(newEmployee)
+        totalEmployees.value++
+        await loadStats() // Recargar estadísticas
+        toast.show('Empleado creado exitosamente', 'success')
+        return newEmployee
+      }
+    } catch (error: any) {
+      console.error('❌ createEmployee - Error completo:', error)
+      console.error('❌ createEmployee - Response data:', error.response?.data)
+      console.error('❌ createEmployee - Status:', error.response?.status)
+      toast.show('Error al crear empleado', 'error')
+      throw error
+    } finally {
+      saving.value = false
+    }
+  }
+  
+  const updateEmployee = async (id: string, data: UpdateEmployeeData) => {
+    try {
+      saving.value = true
+      console.log('📡 updateEmployee - Llamando a PUT /users/' + id)
+      console.log('📡 updateEmployee - Datos enviados:', data)
+      const response = await api.put(`/users/${id}`, data)
       
       if (response.data.success) {
         const updatedEmployee = response.data.data
@@ -174,114 +278,104 @@ export const useEmployeesStore = defineStore('employees', () => {
         if (index !== -1) {
           employees.value[index] = updatedEmployee
         }
-        if (currentEmployee.value?.id === id) {
-          currentEmployee.value = updatedEmployee
-        }
-        toast.showToast('Empleado actualizado exitosamente', 'success')
+        await loadStats() // Recargar estadísticas
+        toast.show('Empleado actualizado exitosamente', 'success')
         return updatedEmployee
       }
     } catch (error: any) {
-      console.error('Error updating employee:', error)
-      const errorMessage = error.response?.data?.message || 'Error al actualizar el empleado'
-      toast.showToast(errorMessage, 'error')
+      console.error('❌ updateEmployee - Error completo:', error)
+      console.error('❌ updateEmployee - Response data:', error.response?.data)
+      console.error('❌ updateEmployee - Status:', error.response?.status)
+      toast.show('Error al actualizar empleado', 'error')
       throw error
     } finally {
-      loading.value = false
+      saving.value = false
     }
   }
-
+  
   const deleteEmployee = async (id: string) => {
     try {
-      loading.value = true
+      deleting.value = true
       const response = await api.delete(`/users/${id}`)
       
       if (response.data.success) {
-        employees.value = employees.value.filter(employee => employee.id !== id)
-        totalEmployees.value--
-        if (currentEmployee.value?.id === id) {
-          currentEmployee.value = null
+        // Remove from local state
+        const index = employees.value.findIndex(employee => employee.id === id)
+        if (index !== -1) {
+          employees.value.splice(index, 1)
+          totalEmployees.value--
         }
-        toast.showToast('Empleado eliminado exitosamente', 'success')
+        await loadStats() // Recargar estadísticas
+        toast.show('Empleado eliminado exitosamente', 'success')
         return true
       }
     } catch (error: any) {
-      console.error('Error deleting employee:', error)
-      const errorMessage = error.response?.data?.message || 'Error al eliminar el empleado'
-      toast.showToast(errorMessage, 'error')
+      console.error('❌ deleteEmployee - Error completo:', error)
+      console.error('❌ deleteEmployee - Response data:', error.response?.data)
+      console.error('❌ deleteEmployee - Status:', error.response?.status)
+      toast.show('Error al eliminar empleado', 'error')
       throw error
     } finally {
-      loading.value = false
+      deleting.value = false
     }
   }
-
-  const toggleEmployeeStatus = async (id: string) => {
+  
+  const activateEmployee = async (id: string) => {
     try {
-      const employee = employees.value.find(e => e.id === id)
-      if (!employee) return
-
-      const response = await api.put(`/users/${id}`, {
-        isActive: !employee.isActive
-      })
-      
+      const response = await api.put(`/users/${id}`, { isActive: true })
       if (response.data.success) {
         const updatedEmployee = response.data.data
-        const index = employees.value.findIndex(e => e.id === id)
+        const index = employees.value.findIndex(employee => employee.id === id)
         if (index !== -1) {
           employees.value[index] = updatedEmployee
         }
-        if (currentEmployee.value?.id === id) {
-          currentEmployee.value = updatedEmployee
-        }
-        toast.showToast(
-          `Empleado ${updatedEmployee.isActive ? 'activado' : 'desactivado'} exitosamente`,
-          'success'
-        )
+        toast.show('Empleado activado exitosamente', 'success')
         return updatedEmployee
       }
     } catch (error: any) {
-      console.error('Error toggling employee status:', error)
-      const errorMessage = error.response?.data?.message || 'Error al cambiar el estado del empleado'
-      toast.showToast(errorMessage, 'error')
+      console.error('❌ activateEmployee - Error completo:', error)
+      console.error('❌ activateEmployee - Response data:', error.response?.data)
+      console.error('❌ activateEmployee - Status:', error.response?.status)
+      toast.show('Error al activar empleado', 'error')
+      throw error
+    }
+  }
+  
+  const deactivateEmployee = async (id: string) => {
+    try {
+      const response = await api.put(`/users/${id}`, { isActive: false })
+      if (response.data.success) {
+        const updatedEmployee = response.data.data
+        const index = employees.value.findIndex(employee => employee.id === id)
+        if (index !== -1) {
+          employees.value[index] = updatedEmployee
+        }
+        toast.show('Empleado desactivado exitosamente', 'success')
+        return updatedEmployee
+      }
+    } catch (error: any) {
+      console.error('❌ deactivateEmployee - Error completo:', error)
+      console.error('❌ deactivateEmployee - Response data:', error.response?.data)
+      console.error('❌ deactivateEmployee - Status:', error.response?.status)
+      toast.show('Error al desactivar empleado', 'error')
       throw error
     }
   }
 
-  const changeEmployeeRole = async (id: string, newRole: 'ADMIN' | 'INSTRUCTOR') => {
-    try {
-      const response = await api.put(`/users/${id}`, {
-        role: newRole
-      })
-      
-      if (response.data.success) {
-        const updatedEmployee = response.data.data
-        const index = employees.value.findIndex(e => e.id === id)
-        if (index !== -1) {
-          employees.value[index] = updatedEmployee
-        }
-        if (currentEmployee.value?.id === id) {
-          currentEmployee.value = updatedEmployee
-        }
-        toast.showToast(`Rol cambiado a ${newRole} exitosamente`, 'success')
-        return updatedEmployee
-      }
-    } catch (error: any) {
-      console.error('Error changing employee role:', error)
-      const errorMessage = error.response?.data?.message || 'Error al cambiar el rol del empleado'
-      toast.showToast(errorMessage, 'error')
-      throw error
-    }
-  }
-
-  const searchEmployees = async (query: string) => {
+  // Métodos de filtrado y búsqueda
+  const setSearchQuery = (query: string) => {
     searchQuery.value = query
   }
 
-  const setFilterRole = (role: 'all' | 'ADMIN' | 'INSTRUCTOR') => {
-    filterRole.value = role
-  }
-
-  const setFilterStatus = (status: 'all' | 'active' | 'inactive') => {
-    filterStatus.value = status
+  const setFilter = (key: string, value: any) => {
+    if (key === 'role') {
+      // Permitir todos los roles válidos del schema
+      if (value === 'INSTRUCTOR' || value === 'SUPERVISOR' || value === 'MANAGER' || value === 'ADMIN' || value === 'all') {
+        filterRole.value = value
+      }
+    } else if (key === 'isActive') {
+      filterStatus.value = value ? 'active' : 'inactive'
+    }
   }
 
   const clearFilters = () => {
@@ -290,47 +384,59 @@ export const useEmployeesStore = defineStore('employees', () => {
     filterStatus.value = 'all'
   }
 
-  const getEmployeeStats = () => {
-    return {
-      total: employees.value.length,
-      admins: admins.value.length,
-      instructors: instructors.value.length,
-      active: activeEmployees.value.length,
-      inactive: inactiveEmployees.value.length
+  // Computed getters adicionales
+  const roles = computed(() => {
+    if (!Array.isArray(employees.value)) {
+      return []
     }
+    // Retornar todos los roles válidos del schema
+    return ['INSTRUCTOR', 'SUPERVISOR', 'MANAGER', 'ADMIN']
+  })
+  
+  // Inicializar store
+  const init = async () => {
+    await fetchAll()
+    await loadStats()
   }
-
+  
   return {
-    // State
+    // Estado
     employees,
-    currentEmployee,
     loading,
-    totalEmployees,
-    totalPages,
+    saving,
+    deleting,
     currentPage,
+    totalPages,
+    totalEmployees,
     searchQuery,
     filterRole,
     filterStatus,
-
+    stats,
+    
     // Getters
-    filteredEmployees,
-    admins,
-    instructors,
+    allItems,
+    filteredItems,
     activeEmployees,
-    inactiveEmployees,
-
-    // Actions
-    fetchEmployees,
-    fetchEmployeeById,
+    instructors,
+    supervisors,
+    managers,
+    admins,
+    roles,
+    
+    // Métodos
+    fetchAll,
     createEmployee,
     updateEmployee,
     deleteEmployee,
-    toggleEmployeeStatus,
-    changeEmployeeRole,
-    searchEmployees,
-    setFilterRole,
-    setFilterStatus,
+    activateEmployee,
+    deactivateEmployee,
+    
+    // Métodos de filtrado y búsqueda
+    setSearchQuery,
+    setFilter,
     clearFilters,
-    getEmployeeStats
+    
+    // Inicialización
+    init
   }
 }) 

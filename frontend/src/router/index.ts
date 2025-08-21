@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { requireAuth, requireAdmin, requireGuest } from './guards'
 import HomeView from '../views/HomeView.vue'
 import AdminClientsView from '../views/AdminClientsView.vue'
 import AdminEmployeesView from '../views/AdminEmployeesView.vue'
@@ -18,6 +19,7 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('../views/DashboardView.vue'),
+      beforeEnter: requireAuth,
     },
     {
       path: '/about',
@@ -25,29 +27,34 @@ const router = createRouter({
       component: () => import('../views/AboutView.vue'),
     },
     {
-      path: '/admin/clients',
+      path: '/admin-clients',
       name: 'admin-clients',
       component: AdminClientsView,
+      beforeEnter: requireAdmin,
     },
     {
-      path: '/admin/employees',
+      path: '/admin-employees',
       name: 'admin-employees',
       component: AdminEmployeesView,
+      beforeEnter: requireAdmin,
     },
     {
-      path: '/admin/reservations',
+      path: '/admin-reservations',
       name: 'admin-reservations',
       component: AdminReservationsView,
+      beforeEnter: requireAdmin,
     },
     {
-      path: '/admin/memberships',
+      path: '/admin-memberships',
       name: 'admin-memberships',
       component: AdminMembershipsView,
+      beforeEnter: requireAdmin,
     },
     {
-      path: '/admin/classes',
+      path: '/admin-classes',
       name: 'admin-classes',
       component: AdminClassesView,
+      beforeEnter: requireAdmin,
     },
     {
       path: '/classes',
@@ -58,41 +65,61 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: () => import('../views/LoginView.vue'),
+      beforeEnter: requireGuest,
     },
     {
       path: '/register',
       name: 'register',
       component: () => import('../views/RegisterView.vue'),
+      beforeEnter: requireGuest,
     },
     {
       path: '/profile',
       name: 'profile',
       component: () => import('../views/ProfileView.vue'),
+      beforeEnter: requireAuth,
     },
     {
       path: '/reservations',
       name: 'reservations',
       component: () => import('../views/ReservationsView.vue'),
+      beforeEnter: requireAuth,
+    },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('../views/AdminDashboardView.vue'),
+      beforeEnter: requireAdmin,
     },
     {
       path: '/admin-dashboard',
       name: 'admin-dashboard',
       component: () => import('../views/AdminDashboardView.vue'),
+      beforeEnter: requireAdmin,
     },
     {
       path: '/admin-users',
       name: 'admin-users',
       component: () => import('../views/AdminUsersView.vue'),
+      beforeEnter: requireAdmin,
     },
     {
       path: '/admin-reports',
       name: 'admin-reports',
       component: () => import('../views/AdminReportsView.vue'),
+      beforeEnter: requireAdmin,
     },
     {
       path: '/admin-inventory',
       name: 'admin-inventory',
       component: () => import('../views/AdminInventoryView.vue'),
+      beforeEnter: requireAdmin,
+    },
+    {
+      path: '/admin-payments',
+      name: 'admin-payments',
+      component: () => import('../views/AdminPaymentsView.vue'),
+      beforeEnter: requireAdmin,
     },
     {
       path: '/instructor-classes',

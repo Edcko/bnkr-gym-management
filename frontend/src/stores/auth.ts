@@ -9,6 +9,13 @@ export const useAuth = defineStore('auth', () => {
   const loading = ref(false)
 
   const isAuthenticated = computed(() => !!token.value && !!user.value)
+  
+  // Computed properties para roles
+  const isClient = computed(() => user.value?.role === 'CLIENT')
+  const isEmployee = computed(() => user.value?.role === 'EMPLOYEE')
+  const isInstructor = computed(() => user.value?.role === 'INSTRUCTOR')
+  const isAdmin = computed(() => user.value?.role === 'ADMIN' || user.value?.role === 'SUPER_ADMIN')
+  const isSuperAdmin = computed(() => user.value?.role === 'SUPER_ADMIN')
 
   const initAuth = () => {
     const savedToken = localStorage.getItem('token')
@@ -93,6 +100,11 @@ export const useAuth = defineStore('auth', () => {
     token,
     loading,
     isAuthenticated,
+    isClient,
+    isEmployee,
+    isInstructor,
+    isAdmin,
+    isSuperAdmin,
     initAuth,
     login,
     register,

@@ -110,11 +110,11 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTheme } from 'vuetify'
-import { useAuthStore } from '@/stores/auth'
+import { useAuth } from '@/stores/auth'
 
 const router = useRouter()
 const theme = useTheme()
-const authStore = useAuthStore()
+const authStore = useAuth()
 
 // Estado
 const drawer = ref(false)

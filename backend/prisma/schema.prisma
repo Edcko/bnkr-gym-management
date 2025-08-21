@@ -11,9 +11,11 @@ datasource db {
 }
 
 enum UserRole {
-  ADMIN
-  INSTRUCTOR
-  CLIENT
+  ADMIN           // Administrador del sistema (acceso total)
+  MANAGER         // Gerente de sucursal (acceso a sucursal)
+  SUPERVISOR      // Supervisor de área (acceso a área específica)
+  INSTRUCTOR      // Instructor de clases (acceso a clases)
+  CLIENT          // Cliente (acceso limitado)
 }
 
 enum ReservationStatus {

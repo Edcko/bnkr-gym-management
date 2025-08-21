@@ -1,369 +1,298 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { api } from '@/utils/api'
+import { BaseStore } from './baseStore'
+import type { BaseEntity } from './baseStore'
 import { useToast } from './toast'
+import { api } from '@/utils/api'
 
-export interface Payment {
-  id: string
-  amount: number
-  currency: string
-  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED'
-  paymentMethod: 'STRIPE' | 'PAYPAL' | 'CASH'
-  description?: string
+// Interfaces específicas para pagos
+export interface Payment extends BaseEntity {
   membershipId?: string
-  reservationId?: string
   userId: string
-  stripePaymentIntentId?: string
-  createdAt: string
-  updatedAt: string
+  amount: number
+  method: string
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED'
+  stripePaymentId?: string
+  description?: string
+  user?: {
+    id: string
+    name: string
+    email: string
+  }
+  membership?: {
+    id: string
+    type: string
+    price: number
+  }
 }
 
 export interface CreatePaymentData {
+  membershipId: string
+  userId: string
   amount: number
-  currency: string
-  paymentMethod: 'STRIPE' | 'PAYPAL' | 'CASH'
+  method: string
+  status?: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED'
+  stripePaymentId?: string
   description?: string
-  membershipId?: string
-  reservationId?: string
 }
 
-export interface StripePaymentIntent {
-  id: string
-  amount: number
-  currency: string
-  status: string
-  client_secret: string
-}
-
-export interface PaymentStats {
-  total: number
-  completed: number
-  pending: number
-  failed: number
-  refunded: number
-  totalAmount: number
-  thisMonth: number
-  lastMonth: number
-}
+export interface UpdatePaymentData extends Partial<CreatePaymentData> {}
 
 export const usePaymentsStore = defineStore('payments', () => {
-  const payments = ref<Payment[]>([])
-  const currentPayment = ref<Payment | null>(null)
-  const loading = ref(false)
-  const totalPayments = ref(0)
-  const totalPages = ref(0)
-  const currentPage = ref(1)
-  const searchQuery = ref('')
-  const filterStatus = ref<'all' | 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED'>('all')
-  const filterMethod = ref<'all' | 'STRIPE' | 'PAYPAL' | 'CASH'>('all')
-
   const toast = useToast()
-
-  // Getters
-  const filteredPayments = computed(() => {
-    let filtered = payments.value
-
-    // Filtrar por búsqueda
-    if (searchQuery.value) {
-      const query = searchQuery.value.toLowerCase()
-      filtered = filtered.filter(payment =>
-        payment.description?.toLowerCase().includes(query) ||
-        payment.id.toLowerCase().includes(query)
-      )
-    }
-
-    // Filtrar por estado
-    if (filterStatus.value !== 'all') {
-      filtered = filtered.filter(payment => payment.status === filterStatus.value)
-    }
-
-    // Filtrar por método de pago
-    if (filterMethod.value !== 'all') {
-      filtered = filtered.filter(payment => payment.paymentMethod === filterMethod.value)
-    }
-
-    return filtered
+  
+  // Estado local del store
+  const items = ref<Payment[]>([])
+  const loading = ref(false)
+  const saving = ref(false)
+  const deleting = ref(false)
+  
+  // Estado específico de pagos
+  const stats = ref({
+    totalPayments: 0,
+    totalRevenue: 0,
+    pendingPayments: 0,
+    completedPayments: 0,
+    failedPayments: 0,
+    successRate: 0
   })
-
-  const completedPayments = computed(() => 
-    payments.value.filter(payment => payment.status === 'COMPLETED')
-  )
-
-  const pendingPayments = computed(() => 
-    payments.value.filter(payment => payment.status === 'PENDING')
-  )
-
-  const failedPayments = computed(() => 
-    payments.value.filter(payment => payment.status === 'FAILED')
-  )
-
-  const refundedPayments = computed(() => 
-    payments.value.filter(payment => payment.status === 'REFUNDED')
-  )
-
-  // Actions
-  const fetchPayments = async (page: number = 1, limit: number = 10) => {
+  
+  // Cargar pagos desde el backend
+  const fetchPayments = async () => {
     try {
       loading.value = true
-      const response = await api.get(`/payments?page=${page}&limit=${limit}`)
+      console.log('📡 Llamando a /payments...')
+      
+      const response = await api.get('/payments')
+      console.log('📡 Respuesta recibida:', response.data)
       
       if (response.data.success) {
-        payments.value = response.data.data.payments
-        totalPayments.value = response.data.data.total
-        totalPages.value = response.data.data.totalPages
-        currentPage.value = page
+        // La respuesta tiene la estructura: { data: [...], pagination: {...} }
+        items.value = response.data.data || []
+        console.log('✅ Pagos cargados:', items.value.length)
       }
     } catch (error) {
-      console.error('Error fetching payments:', error)
-      toast.show('Error al cargar los pagos', 'error')
+      console.error('❌ Error cargando pagos:', error)
+      toast.show('Error al cargar pagos', 'error')
     } finally {
       loading.value = false
     }
   }
-
-  const fetchUserPayments = async () => {
+  
+  // Cargar estadísticas de pagos
+  const loadStats = async () => {
     try {
-      loading.value = true
-      const response = await api.get('/payments/user')
+      console.log('📊 Llamando a /payments/stats...')
+      const response = await api.get('/payments/stats')
+      console.log('📊 Respuesta de stats:', response.data)
       
       if (response.data.success) {
-        return response.data.data
+        stats.value = response.data.data
+        console.log('✅ Stats actualizados:', stats.value)
       }
     } catch (error) {
-      console.error('Error fetching user payments:', error)
-      toast.show('Error al cargar los pagos del usuario', 'error')
-      return []
-    } finally {
-      loading.value = false
+      console.error('❌ Error cargando estadísticas:', error)
+      toast.show('Error al cargar estadísticas de pagos', 'error')
     }
   }
-
-  const fetchPaymentById = async (id: string) => {
+  
+  // Métodos específicos de pagos
+  const createPayment = async (data: CreatePaymentData) => {
     try {
-      loading.value = true
-      const response = await api.get(`/payments/${id}`)
-      
-      if (response.data.success) {
-        currentPayment.value = response.data.data
-        return response.data.data
-      }
-    } catch (error) {
-      console.error('Error fetching payment:', error)
-      toast.show('Error al cargar el pago', 'error')
-      return null
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const createPayment = async (paymentData: CreatePaymentData) => {
-    try {
-      loading.value = true
-      const response = await api.post('/payments', paymentData)
+      saving.value = true
+      const response = await api.post('/payments', data)
       
       if (response.data.success) {
         const newPayment = response.data.data
-        payments.value.unshift(newPayment)
-        totalPayments.value++
+        items.value.unshift(newPayment)
+        await loadStats() // Recargar estadísticas
         toast.show('Pago creado exitosamente', 'success')
         return newPayment
       }
-    } catch (error: any) {
-      console.error('Error creating payment:', error)
-      const errorMessage = error.response?.data?.message || 'Error al crear el pago'
-      toast.show(errorMessage, 'error')
+    } catch (error) {
+      toast.show('Error al crear pago', 'error')
       throw error
     } finally {
-      loading.value = false
+      saving.value = false
     }
   }
-
-  const createStripePaymentIntent = async (amount: number, currency: string = 'usd', description?: string) => {
+  
+  const updatePayment = async (id: string, data: UpdatePaymentData) => {
     try {
-      loading.value = true
-      const response = await api.post('/payments/stripe/create-intent', {
-        amount,
-        currency,
-        description
-      })
+      saving.value = true
+      const response = await api.put(`/payments/${id}`, data)
       
       if (response.data.success) {
-        return response.data.data as StripePaymentIntent
-      }
-    } catch (error: any) {
-      console.error('Error creating Stripe payment intent:', error)
-      const errorMessage = error.response?.data?.message || 'Error al crear el intent de pago'
-      toast.show(errorMessage, 'error')
-      throw error
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const confirmStripePayment = async (paymentIntentId: string) => {
-    try {
-      loading.value = true
-      const response = await api.post('/payments/stripe/confirm', {
-        paymentIntentId
-      })
-      
-      if (response.data.success) {
-        const confirmedPayment = response.data.data
-        const index = payments.value.findIndex(payment => payment.id === confirmedPayment.id)
+        const updatedPayment = response.data.data
+        const index = items.value.findIndex(payment => payment.id === id)
         if (index !== -1) {
-          payments.value[index] = confirmedPayment
+          items.value[index] = updatedPayment
         }
-        if (currentPayment.value?.id === confirmedPayment.id) {
-          currentPayment.value = confirmedPayment
-        }
-        toast.show('Pago confirmado exitosamente', 'success')
-        return confirmedPayment
-      }
-    } catch (error: any) {
-      console.error('Error confirming Stripe payment:', error)
-      const errorMessage = error.response?.data?.message || 'Error al confirmar el pago'
-      toast.show(errorMessage, 'error')
-      throw error
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const refundPayment = async (id: string, amount?: number) => {
-    try {
-      loading.value = true
-      const response = await api.post(`/payments/${id}/refund`, { amount })
-      
-      if (response.data.success) {
-        const refundedPayment = response.data.data
-        const index = payments.value.findIndex(payment => payment.id === id)
-        if (index !== -1) {
-          payments.value[index] = refundedPayment
-        }
-        if (currentPayment.value?.id === id) {
-          currentPayment.value = refundedPayment
-        }
-        toast.show('Pago reembolsado exitosamente', 'success')
-        return refundedPayment
-      }
-    } catch (error: any) {
-      console.error('Error refunding payment:', error)
-      const errorMessage = error.response?.data?.message || 'Error al reembolsar el pago'
-      toast.show(errorMessage, 'error')
-      throw error
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const getPaymentStats = async (): Promise<PaymentStats | null> => {
-    try {
-      const response = await api.get('/payments/stats')
-      
-      if (response.data.success) {
-        return response.data.data
+        await loadStats() // Recargar estadísticas
+        toast.show('Pago actualizado exitosamente', 'success')
+        return updatedPayment
       }
     } catch (error) {
-      console.error('Error fetching payment stats:', error)
-      toast.show('Error al cargar las estadísticas de pagos', 'error')
+      toast.show('Error al actualizar pago', 'error')
+      throw error
+    } finally {
+      saving.value = false
     }
-    return null
   }
-
-  const searchPayments = async (query: string) => {
-    searchQuery.value = query
-  }
-
-  const setFilterStatus = (status: 'all' | 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED') => {
-    filterStatus.value = status
-  }
-
-  const setFilterMethod = (method: 'all' | 'STRIPE' | 'PAYPAL' | 'CASH') => {
-    filterMethod.value = method
-  }
-
-  const clearFilters = () => {
-    searchQuery.value = ''
-    filterStatus.value = 'all'
-    filterMethod.value = 'all'
-  }
-
-  const getPaymentStatusColor = (status: string) => {
-    const colors = {
-      PENDING: 'warning',
-      COMPLETED: 'success',
-      FAILED: 'error',
-      REFUNDED: 'info'
+  
+  const deletePayment = async (id: string) => {
+    try {
+      deleting.value = true
+      const response = await api.delete(`/payments/${id}`)
+      
+      if (response.data.success) {
+        items.value = items.value.filter(payment => payment.id !== id)
+        await loadStats() // Recargar estadísticas
+        toast.show('Pago eliminado exitosamente', 'success')
+        return true
+      }
+    } catch (error) {
+      toast.show('Error al eliminar pago', 'error')
+      throw error
+    } finally {
+      deleting.value = false
     }
-    return colors[status as keyof typeof colors] || 'grey'
   }
-
-  const getPaymentStatusText = (status: string) => {
-    const texts = {
-      PENDING: 'Pendiente',
-      COMPLETED: 'Completado',
-      FAILED: 'Fallido',
-      REFUNDED: 'Reembolsado'
+  
+  const confirmPayment = async (id: string) => {
+    try {
+      const result = await updatePayment(id, { status: 'COMPLETED' })
+      if (result) {
+        toast.show('Pago confirmado exitosamente', 'success')
+      }
+      return result
+    } catch (error) {
+      toast.show('Error al confirmar pago', 'error')
+      throw error
     }
-    return texts[status as keyof typeof texts] || status
   }
-
-  const getPaymentMethodText = (method: string) => {
-    const texts = {
-      STRIPE: 'Tarjeta',
-      PAYPAL: 'PayPal',
-      CASH: 'Efectivo'
+  
+  const failPayment = async (id: string) => {
+    try {
+      const result = await updatePayment(id, { status: 'FAILED' })
+      if (result) {
+        toast.show('Pago marcado como fallido', 'success')
+      }
+      return result
+    } catch (error) {
+      toast.show('Error al marcar pago como fallido', 'error')
+      throw error
     }
-    return texts[method as keyof typeof texts] || method
   }
-
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: currency.toUpperCase()
-    }).format(amount / 100) // Stripe amounts are in cents
+  
+  const refundPayment = async (id: string) => {
+    try {
+      const result = await updatePayment(id, { status: 'REFUNDED' })
+      if (result) {
+        toast.show('Pago reembolsado exitosamente', 'success')
+      }
+      return result
+    } catch (error) {
+      toast.show('Error al reembolsar pago', 'error')
+      throw error
+    }
   }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES')
+  
+  // Override de métodos del BaseStore para lógica específica
+  const searchInItem = (item: Payment, query: string): boolean => {
+    const searchQuery = query.toLowerCase()
+    return (
+      (item.user?.name.toLowerCase().includes(searchQuery) || false) ||
+      (item.user?.email.toLowerCase().includes(searchQuery) || false) ||
+      item.status.toLowerCase().includes(searchQuery) ||
+      (item.description?.toLowerCase().includes(searchQuery) || false) ||
+      item.amount.toString().includes(searchQuery)
+    )
   }
-
+  
+  const applyFilter = (item: Payment, filters: any): boolean => {
+    // Filtro por estado
+    if (filters.status && filters.status !== 'all' && item.status !== filters.status) {
+      return false
+    }
+    
+    // Filtro por método de pago
+    if (filters.method && filters.method !== 'all') {
+      // Aquí podrías agregar lógica para filtrar por método de pago
+    }
+    
+    return true
+  }
+  
+  // Computed getters específicos de pagos
+  const pendingPayments = computed(() =>
+    items.value.filter(item => item.status === 'PENDING')
+  )
+  
+  const completedPayments = computed(() =>
+    items.value.filter(item => item.status === 'COMPLETED')
+  )
+  
+  const failedPayments = computed(() =>
+    items.value.filter(item => item.status === 'FAILED')
+  )
+  
+  const refundedPayments = computed(() =>
+    items.value.filter(item => item.status === 'REFUNDED')
+  )
+  
+  const totalRevenue = computed(() =>
+    items.value
+      .filter(item => item.status === 'COMPLETED')
+      .reduce((sum, item) => sum + item.amount, 0)
+  )
+  
+  const statuses = computed(() => {
+    const uniqueStatuses = new Set(items.value.map(item => item.status))
+    return Array.from(uniqueStatuses).sort()
+  })
+  
+  // Inicializar store
+  const init = async () => {
+    console.log('🚀 Iniciando store de pagos...')
+    try {
+      await fetchPayments()
+      await loadStats()
+    } catch (error) {
+      console.error('❌ Error en init:', error)
+      throw error
+    }
+  }
+  
   return {
-    // State
-    payments,
-    currentPayment,
+    // Estado
+    items,
     loading,
-    totalPayments,
-    totalPages,
-    currentPage,
-    searchQuery,
-    filterStatus,
-    filterMethod,
-
-    // Getters
-    filteredPayments,
-    completedPayments,
+    saving,
+    deleting,
+    stats,
+    
+    // Métodos
+    fetchPayments,
+    loadStats,
+    create: createPayment,
+    update: updatePayment,
+    delete: deletePayment,
+    
+    // Métodos específicos de pagos
+    confirmPayment,
+    failPayment,
+    refundPayment,
+    
+    // Computed getters
     pendingPayments,
+    completedPayments,
     failedPayments,
     refundedPayments,
-
-    // Actions
-    fetchPayments,
-    fetchUserPayments,
-    fetchPaymentById,
-    createPayment,
-    createStripePaymentIntent,
-    confirmStripePayment,
-    refundPayment,
-    getPaymentStats,
-    searchPayments,
-    setFilterStatus,
-    setFilterMethod,
-    clearFilters,
-    getPaymentStatusColor,
-    getPaymentStatusText,
-    getPaymentMethodText,
-    formatCurrency,
-    formatDate
+    totalRevenue,
+    statuses,
+    
+    // Inicialización
+    init
   }
 }) 

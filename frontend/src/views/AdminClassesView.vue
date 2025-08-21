@@ -15,7 +15,7 @@
               color="primary"
               prepend-icon="mdi-plus"
               @click="openCreateDialog"
-              :loading="loading"
+              :loading="classesStore.saving"
             >
               Nueva Clase
             </v-btn>
@@ -31,7 +31,7 @@
               <div class="d-flex align-center">
                 <v-icon color="primary" size="large" class="mr-3">mdi-dumbbell</v-icon>
                 <div>
-                  <div class="text-h6">{{ stats?.total || 0 }}</div>
+                  <div class="text-h6">{{ classesStore.stats?.total || 0 }}</div>
                   <div class="text-caption">Total Clases</div>
                 </div>
               </div>
@@ -44,7 +44,7 @@
               <div class="d-flex align-center">
                 <v-icon color="success" size="large" class="mr-3">mdi-check-circle</v-icon>
                 <div>
-                  <div class="text-h6">{{ stats?.active || 0 }}</div>
+                  <div class="text-h6">{{ classesStore.stats?.active || 0 }}</div>
                   <div class="text-caption">Clases Activas</div>
                 </div>
               </div>
@@ -57,7 +57,7 @@
               <div class="d-flex align-center">
                 <v-icon color="warning" size="large" class="mr-3">mdi-account-group</v-icon>
                 <div>
-                  <div class="text-h6">{{ stats?.instructors || 0 }}</div>
+                  <div class="text-h6">{{ classesStore.stats?.instructors || 0 }}</div>
                   <div class="text-caption">Instructores</div>
                 </div>
               </div>
@@ -70,7 +70,7 @@
               <div class="d-flex align-center">
                 <v-icon color="info" size="large" class="mr-3">mdi-calendar-check</v-icon>
                 <div>
-                  <div class="text-h6">{{ stats?.reservations || 0 }}</div>
+                  <div class="text-h6">{{ classesStore.stats?.reservations || 0 }}</div>
                   <div class="text-caption">Reservas Hoy</div>
                 </div>
               </div>
@@ -102,7 +102,7 @@
                     :items="instructors"
                     item-title="name"
                     item-value="id"
-                    label="Instructor"
+                    label="Filtrar por instructor"
                     variant="outlined"
                     density="compact"
                     clearable
@@ -113,9 +113,12 @@
                   <v-select
                     v-model="filterStatus"
                     :items="statusOptions"
-                    label="Estado"
+                    item-title="title"
+                    item-value="value"
+                    label="Filtrar por estado"
                     variant="outlined"
                     density="compact"
+                    clearable
                     @update:model-value="filterByStatus"
                   />
                 </v-col>
@@ -123,7 +126,7 @@
                   <v-btn
                     variant="outlined"
                     @click="clearFilters"
-                    prepend-icon="mdi-filter-remove"
+                    :disabled="!hasActiveFilters"
                   >
                     Limpiar
                   </v-btn>
@@ -139,9 +142,10 @@
         <v-col cols="12">
           <v-card>
             <v-data-table
+              :key="tableKey"
               :headers="headers"
               :items="filteredClasses"
-              :loading="loading"
+              :loading="classesStore.loading"
               :items-per-page="10"
               class="elevation-1"
             >
@@ -233,86 +237,75 @@
           </v-card>
         </v-col>
       </v-row>
-
-      <!-- Pagination -->
-      <v-row v-if="totalPages > 1">
-        <v-col cols="12" class="d-flex justify-center">
-          <v-pagination
-            v-model="currentPage"
-            :length="totalPages"
-            @update:model-value="loadClasses"
-          />
-        </v-col>
-      </v-row>
     </v-container>
 
     <!-- Create/Edit Dialog -->
-    <v-dialog v-model="showDialog" max-width="600px">
+    <v-dialog v-model="showDialog" max-width="600px" persistent>
       <v-card>
         <v-card-title>
           {{ isEditing ? 'Editar Clase' : 'Nueva Clase' }}
         </v-card-title>
         <v-card-text>
-          <v-form ref="form" v-model="formValid">
+          <v-form ref="formRef" v-model="formValid">
             <v-row>
-              <v-col cols="12" md="6">
+              <v-col cols="12">
                 <v-text-field
-                  v-model="form.name"
+                  v-model="formData.name"
                   label="Nombre de la clase"
                   variant="outlined"
                   :rules="[rules.required]"
-                  required
+                  clearable
                 />
               </v-col>
-              <v-col cols="12" md="6">
+              <v-col cols="12">
+                <v-textarea
+                  v-model="formData.description"
+                  label="Descripción"
+                  variant="outlined"
+                  rows="3"
+                  clearable
+                />
+              </v-col>
+              <v-col cols="6">
+                <v-text-field
+                  v-model.number="formData.duration"
+                  label="Duración (minutos)"
+                  variant="outlined"
+                  type="number"
+                  :rules="[rules.required, rules.duration]"
+                  clearable
+                />
+              </v-col>
+              <v-col cols="6">
+                <v-text-field
+                  v-model.number="formData.maxCapacity"
+                  label="Capacidad máxima"
+                  variant="outlined"
+                  type="number"
+                  :rules="[rules.required, rules.capacity]"
+                  clearable
+                />
+              </v-col>
+              <v-col cols="6">
+                <v-text-field
+                  v-model.number="formData.price"
+                  label="Precio"
+                  variant="outlined"
+                  type="number"
+                  :rules="[rules.required, rules.price]"
+                  clearable
+                />
+              </v-col>
+              <v-col cols="6">
                 <v-select
-                  v-model="form.instructorId"
+                  v-model="formData.instructorId"
                   :items="instructors"
                   item-title="name"
                   item-value="id"
                   label="Instructor"
                   variant="outlined"
                   :rules="[rules.required]"
-                  required
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-textarea
-                  v-model="form.description"
-                  label="Descripción"
-                  variant="outlined"
-                  rows="3"
-                />
-              </v-col>
-              <v-col cols="12" md="4">
-                <v-text-field
-                  v-model="form.duration"
-                  label="Duración (minutos)"
-                  type="number"
-                  variant="outlined"
-                  :rules="[rules.required, rules.duration]"
-                  required
-                />
-              </v-col>
-              <v-col cols="12" md="4">
-                <v-text-field
-                  v-model="form.maxCapacity"
-                  label="Capacidad máxima"
-                  type="number"
-                  variant="outlined"
-                  :rules="[rules.required, rules.capacity]"
-                  required
-                />
-              </v-col>
-              <v-col cols="12" md="4">
-                <v-text-field
-                  v-model="form.price"
-                  label="Precio"
-                  type="number"
-                  step="0.01"
-                  variant="outlined"
-                  :rules="[rules.required, rules.price]"
-                  required
+                  clearable
                 />
               </v-col>
             </v-row>
@@ -323,13 +316,14 @@
           <v-btn
             variant="outlined"
             @click="closeDialog"
+            :disabled="classesStore.saving"
           >
             Cancelar
           </v-btn>
           <v-btn
             color="primary"
             @click="saveClass"
-            :loading="loading"
+            :loading="classesStore.saving"
             :disabled="!formValid"
           >
             {{ isEditing ? 'Actualizar' : 'Crear' }}
@@ -339,63 +333,42 @@
     </v-dialog>
 
     <!-- View Class Dialog -->
-    <v-dialog v-model="showViewDialog" max-width="500px">
-      <v-card v-if="selectedClass">
-        <v-card-title>
-          Detalles de la Clase
-        </v-card-title>
-        <v-card-text>
-          <v-list>
-            <v-list-item>
-              <template v-slot:prepend>
-                <v-icon>mdi-dumbbell</v-icon>
-              </template>
-              <v-list-item-title>{{ selectedClass.name }}</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedClass.description }}</v-list-item-subtitle>
-            </v-list-item>
-            <v-list-item>
-              <template v-slot:prepend>
-                <v-icon>mdi-account-tie</v-icon>
-              </template>
-              <v-list-item-title>{{ selectedClass.instructor?.name }}</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedClass.instructor?.email }}</v-list-item-subtitle>
-            </v-list-item>
-            <v-list-item>
-              <template v-slot:prepend>
-                <v-icon>mdi-clock</v-icon>
-              </template>
-              <v-list-item-title>{{ selectedClass.duration }} minutos</v-list-item-title>
-            </v-list-item>
-            <v-list-item>
-              <template v-slot:prepend>
-                <v-icon>mdi-account-group</v-icon>
-              </template>
-              <v-list-item-title>{{ selectedClass.maxCapacity }} personas</v-list-item-title>
-            </v-list-item>
-            <v-list-item>
-              <template v-slot:prepend>
-                <v-icon>mdi-currency-usd</v-icon>
-              </template>
-              <v-list-item-title>${{ selectedClass.price }}</v-list-item-title>
-            </v-list-item>
-            <v-list-item>
-              <template v-slot:prepend>
-                <v-icon>mdi-circle</v-icon>
-              </template>
-              <v-list-item-title>
-                <v-chip
-                  :color="selectedClass.isActive ? 'success' : 'error'"
-                  :text="selectedClass.isActive ? 'Activa' : 'Inactiva'"
-                  size="small"
-                />
-              </v-list-item-title>
-            </v-list-item>
-          </v-list>
+    <v-dialog v-model="showViewDialog" max-width="600px">
+      <v-card>
+        <v-card-title>Detalles de la Clase</v-card-title>
+        <v-card-text v-if="selectedClass">
+          <v-row>
+            <v-col cols="12">
+              <h3>{{ selectedClass.name }}</h3>
+              <p class="text-body-2">{{ selectedClass.description || 'Sin descripción' }}</p>
+            </v-col>
+            <v-col cols="6">
+              <strong>Duración:</strong> {{ selectedClass.duration }} minutos
+            </v-col>
+            <v-col cols="6">
+              <strong>Capacidad:</strong> {{ selectedClass.maxCapacity }} personas
+            </v-col>
+            <v-col cols="6">
+              <strong>Precio:</strong> ${{ selectedClass.price }}
+            </v-col>
+            <v-col cols="6">
+              <strong>Estado:</strong>
+              <v-chip
+                :color="selectedClass.isActive ? 'success' : 'error'"
+                :text="selectedClass.isActive ? 'Activa' : 'Inactiva'"
+                size="small"
+                class="ml-2"
+              />
+            </v-col>
+            <v-col cols="12">
+              <strong>Instructor:</strong> {{ selectedClass.instructor?.name }}
+            </v-col>
+          </v-row>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn
-            color="primary"
+            variant="outlined"
             @click="showViewDialog = false"
           >
             Cerrar
@@ -423,7 +396,7 @@
           <v-btn
             color="error"
             @click="confirmDelete"
-            :loading="loading"
+            :loading="classesStore.deleting"
           >
             Eliminar
           </v-btn>
@@ -436,12 +409,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from '@/stores/toast'
+import { useClassesStore } from '@/stores/classes'
 import { api } from '@/utils/api'
 
 const toast = useToast()
+const classesStore = useClassesStore()
 
 // Reactive data
-const loading = ref(false)
 const showDialog = ref(false)
 const showViewDialog = ref(false)
 const showDeleteDialog = ref(false)
@@ -451,14 +425,11 @@ const formValid = ref(false)
 const searchQuery = ref('')
 const filterInstructor = ref('')
 const filterStatus = ref<'all' | 'active' | 'inactive'>('all')
-const currentPage = ref(1)
-const totalPages = ref(0)
-const classes = ref<any[]>([])
 const instructors = ref<any[]>([])
-const stats = ref<any>(null)
+const tableKey = ref(0)
 
 // Form data
-const form = ref({
+const formData = ref({
   name: '',
   description: '',
   duration: 60,
@@ -495,7 +466,15 @@ const rules = {
 
 // Computed
 const filteredClasses = computed(() => {
-  let filtered = classes.value
+  let filtered = classesStore.classes
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(cls => 
+      cls.name.toLowerCase().includes(query) ||
+      cls.description?.toLowerCase().includes(query)
+    )
+  }
 
   if (filterInstructor.value) {
     filtered = filtered.filter(cls => cls.instructorId === filterInstructor.value)
@@ -510,58 +489,36 @@ const filteredClasses = computed(() => {
   return filtered
 })
 
-// Methods
-const loadClasses = async () => {
-  try {
-    loading.value = true
-    const response = await api.get(`/classes?page=${currentPage.value}&limit=10`)
-    
-    if (response.data.success) {
-      classes.value = response.data.data.classes
-      totalPages.value = response.data.data.pagination.pages
-    }
-  } catch (error) {
-    console.error('Error loading classes:', error)
-    toast.show('Error al cargar las clases', 'error')
-  } finally {
-    loading.value = false
-  }
-}
+const hasActiveFilters = computed(() => {
+  return searchQuery.value || filterInstructor.value || filterStatus.value !== 'all'
+})
 
+// Methods
 const loadInstructors = async () => {
   try {
-    const response = await api.get('/users/active/INSTRUCTOR')
+    console.log('🔄 Loading instructors...')
+    const response = await api.get('/users/role/INSTRUCTOR')
     
     if (response.data.success) {
-      instructors.value = response.data.data
+      instructors.value = response.data.data.users || []
+      console.log('✅ Instructors loaded:', instructors.value.length)
     }
   } catch (error) {
-    console.error('Error loading instructors:', error)
-  }
-}
-
-const loadStats = async () => {
-  try {
-    const response = await api.get('/classes/stats')
-    
-    if (response.data.success) {
-      stats.value = response.data.data
-    }
-  } catch (error) {
-    console.error('Error loading stats:', error)
+    console.error('❌ Error loading instructors:', error)
+    toast.show('Error al cargar instructores', 'error')
   }
 }
 
 const openCreateDialog = () => {
   isEditing.value = false
-  resetForm()
+  clearForm()
   showDialog.value = true
 }
 
 const editClass = (cls: any) => {
   isEditing.value = true
   selectedClass.value = cls
-  form.value = {
+  formData.value = {
     name: cls.name,
     description: cls.description || '',
     duration: cls.duration,
@@ -579,29 +536,19 @@ const viewClass = (cls: any) => {
 
 const toggleClassStatus = async (cls: any) => {
   try {
-    loading.value = true
-    const response = await api.put(`/classes/${cls.id}`, {
-      isActive: !cls.isActive
-    })
+    console.log('🔄 Toggling class status:', cls.id)
+    await classesStore.toggleClassStatus(cls.id)
     
-    if (response.data.success) {
-      const updatedClass = response.data.data
-      const index = classes.value.findIndex(c => c.id === cls.id)
-      if (index !== -1) {
-        classes.value[index] = updatedClass
-      }
-      toast.show(`Clase ${updatedClass.isActive ? 'activada' : 'desactivada'} exitosamente`, 'success')
-    }
+    // Forzar re-render de la tabla
+    tableKey.value++
+    
+    console.log('✅ Class status toggled successfully')
   } catch (error) {
-    console.error('Error toggling class status:', error)
-    toast.show('Error al cambiar el estado de la clase', 'error')
-  } finally {
-    loading.value = false
+    console.error('❌ Error toggling class status:', error)
   }
 }
 
 const viewSchedule = (cls: any) => {
-  // Implementar vista de horarios
   toast.show('Funcionalidad de horarios en desarrollo', 'info')
 }
 
@@ -614,20 +561,18 @@ const confirmDelete = async () => {
   if (!selectedClass.value) return
   
   try {
-    loading.value = true
-    const response = await api.delete(`/classes/${selectedClass.value.id}`)
+    console.log('🔄 Deleting class:', selectedClass.value.id)
+    await classesStore.deleteClass(selectedClass.value.id)
     
-    if (response.data.success) {
-      classes.value = classes.value.filter(c => c.id !== selectedClass.value.id)
-      showDeleteDialog.value = false
-      selectedClass.value = null
-      toast.show('Clase eliminada exitosamente', 'success')
-    }
+    showDeleteDialog.value = false
+    selectedClass.value = null
+    
+    // Forzar re-render de la tabla
+    tableKey.value++
+    
+    console.log('✅ Class deleted successfully')
   } catch (error) {
-    console.error('Error deleting class:', error)
-    toast.show('Error al eliminar la clase', 'error')
-  } finally {
-    loading.value = false
+    console.error('❌ Error deleting class:', error)
   }
 }
 
@@ -635,46 +580,31 @@ const saveClass = async () => {
   if (!formValid.value) return
 
   try {
-    loading.value = true
+    console.log('🔄 Saving class:', formData.value)
     
     if (isEditing.value && selectedClass.value) {
-      const response = await api.put(`/classes/${selectedClass.value.id}`, form.value)
-      
-      if (response.data.success) {
-        const updatedClass = response.data.data
-        const index = classes.value.findIndex(c => c.id === selectedClass.value.id)
-        if (index !== -1) {
-          classes.value[index] = updatedClass
-        }
-        toast.show('Clase actualizada exitosamente', 'success')
-      }
+      await classesStore.updateClass(selectedClass.value.id, formData.value)
     } else {
-      const response = await api.post('/classes', form.value)
-      
-      if (response.data.success) {
-        const newClass = response.data.data
-        classes.value.unshift(newClass)
-        toast.show('Clase creada exitosamente', 'success')
-      }
+      await classesStore.createClass(formData.value)
     }
     
+    // Forzar re-render de la tabla
+    tableKey.value++
+    
     closeDialog()
+    console.log('✅ Class saved successfully')
   } catch (error: any) {
-    console.error('Error saving class:', error)
-    const errorMessage = error.response?.data?.message || 'Error al guardar la clase'
-    toast.show(errorMessage, 'error')
-  } finally {
-    loading.value = false
+    console.error('❌ Error saving class:', error)
   }
 }
 
 const closeDialog = () => {
   showDialog.value = false
-  resetForm()
+  clearForm()
 }
 
-const resetForm = () => {
-  form.value = {
+const clearForm = () => {
+  formData.value = {
     name: '',
     description: '',
     duration: 60,
@@ -686,31 +616,42 @@ const resetForm = () => {
 }
 
 const searchClasses = async () => {
-  // Implementar búsqueda
-  await loadClasses()
+  // La búsqueda se aplica en el computed
+  console.log('🔍 Searching classes with query:', searchQuery.value)
 }
 
 const filterByInstructor = async () => {
   // Los filtros se aplican en el computed
+  console.log('🔍 Filtering by instructor:', filterInstructor.value)
 }
 
 const filterByStatus = async () => {
   // Los filtros se aplican en el computed
+  console.log('🔍 Filtering by status:', filterStatus.value)
 }
 
 const clearFilters = () => {
   searchQuery.value = ''
   filterInstructor.value = ''
   filterStatus.value = 'all'
+  console.log('🧹 Filters cleared')
 }
 
 // Lifecycle
-onMounted(() => {
-  Promise.all([
-    loadClasses(),
-    loadInstructors(),
-    loadStats()
-  ])
+onMounted(async () => {
+  console.log('🚀 AdminClassesView mounted')
+  
+  try {
+    await Promise.all([
+      classesStore.fetchAll(),
+      classesStore.fetchStats(),
+      loadInstructors()
+    ])
+    
+    console.log('✅ AdminClassesView initialized successfully')
+  } catch (error) {
+    console.error('❌ Error initializing AdminClassesView:', error)
+  }
 })
 </script>
 

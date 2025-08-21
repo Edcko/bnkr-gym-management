@@ -25,6 +25,7 @@ export interface UpdateUserData {
   emergencyPhone?: string
   role?: UserRole
   isActive?: boolean
+  password?: string
 }
 
 export interface UserStats {
@@ -182,10 +183,19 @@ export class UserService {
       }
     }
     
+    // Preparar datos para actualización (excluir password si existe)
+    const { password, ...dataToUpdate } = updateData
+    
+    // Si hay contraseña nueva, encriptarla
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 12)
+      ;(dataToUpdate as any).passwordHash = hashedPassword
+    }
+    
     // Actualizar usuario
     const user = await prisma.user.update({
       where: { id },
-      data: updateData
+      data: dataToUpdate
     })
     
     return user

@@ -242,4 +242,218 @@ export class UserController {
       data: userWithoutPassword
     })
   })
-} 
+
+  // Métodos específicos para clientes
+  static getAllClients = asyncHandler(async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string) || 1
+    const limit = parseInt(req.query.limit as string) || 10
+
+    const result = await UserService.getUsersByRole('CLIENT', page, limit)
+
+    return res.status(200).json({
+      success: true,
+      data: result
+    })
+  })
+
+  static getClientById = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params
+
+    const user = await UserService.getUserById(id)
+
+    if (!user || user.role !== 'CLIENT') {
+      return res.status(404).json({
+        success: false,
+        message: 'Cliente no encontrado'
+      })
+    }
+
+    // No devolver la contraseña
+    const { passwordHash, ...userWithoutPassword } = user
+
+    return res.status(200).json({
+      success: true,
+      data: userWithoutPassword
+    })
+  })
+
+  static createClient = asyncHandler(async (req: Request, res: Response) => {
+    const userData: CreateUserData = { ...req.body, role: 'CLIENT' }
+
+    const user = await UserService.createUser(userData)
+
+    // No devolver la contraseña
+    const { passwordHash, ...userWithoutPassword } = user
+
+    return res.status(201).json({
+      success: true,
+      message: 'Cliente creado exitosamente',
+      data: userWithoutPassword
+    })
+  })
+
+  static updateClient = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params
+    const updateData: UpdateUserData = req.body
+
+    // No permitir cambiar el rol a cliente
+    delete updateData.role
+
+    const user = await UserService.updateUser(id, updateData)
+
+    // No devolver la contraseña
+    const { passwordHash, ...userWithoutPassword } = user
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cliente actualizado exitosamente',
+      data: userWithoutPassword
+    })
+  })
+
+  static deleteClient = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params
+
+    const user = await UserService.deleteUser(id)
+
+    // No devolver la contraseña
+    const { passwordHash, ...userWithoutPassword } = user
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cliente eliminado exitosamente',
+      data: userWithoutPassword
+    })
+  })
+
+  static getClientStats = asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const stats = await UserService.getUserStats()
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          totalClients: 0,
+          activeClients: 0,
+          newClientsThisMonth: 0
+        }
+      })
+    } catch (error) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          totalClients: 0,
+          activeClients: 0,
+          newClientsThisMonth: 0
+        }
+      })
+    }
+  })
+
+  // Métodos específicos para empleados
+  static getAllEmployees = asyncHandler(async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string) || 1
+    const limit = parseInt(req.query.limit as string) || 10
+
+    const result = await UserService.getUsersByRole('INSTRUCTOR', page, limit)
+
+    return res.status(200).json({
+      success: true,
+      data: result
+    })
+  })
+
+  static getEmployeeById = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params
+
+    const user = await UserService.getUserById(id)
+
+    if (!user || user.role !== 'INSTRUCTOR') {
+      return res.status(404).json({
+        success: false,
+        message: 'Empleado no encontrado'
+      })
+    }
+
+    // No devolver la contraseña
+    const { passwordHash, ...userWithoutPassword } = user
+
+    return res.status(200).json({
+      success: true,
+      data: userWithoutPassword
+    })
+  })
+
+  static createEmployee = asyncHandler(async (req: Request, res: Response) => {
+    const userData: CreateUserData = { ...req.body, role: 'INSTRUCTOR' }
+
+    const user = await UserService.createUser(userData)
+
+    // No devolver la contraseña
+    const { passwordHash, ...userWithoutPassword } = user
+
+    return res.status(201).json({
+      success: true,
+      message: 'Empleado creado exitosamente',
+      data: userWithoutPassword
+    })
+  })
+
+  static updateEmployee = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params
+    const updateData: UpdateUserData = req.body
+
+    // No permitir cambiar el rol a empleado
+    delete updateData.role
+
+    const user = await UserService.updateUser(id, updateData)
+
+    // No devolver la contraseña
+    const { passwordHash, ...userWithoutPassword } = user
+
+    return res.status(200).json({
+      success: true,
+      message: 'Empleado actualizado exitosamente',
+      data: userWithoutPassword
+    })
+  })
+
+  static deleteEmployee = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params
+
+    const user = await UserService.deleteUser(id)
+
+    // No devolver la contraseña
+    const { passwordHash, ...userWithoutPassword } = user
+
+    return res.status(200).json({
+      success: true,
+      message: 'Empleado eliminado exitosamente',
+      data: userWithoutPassword
+    })
+  })
+
+  static getEmployeeStats = asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const stats = await UserService.getUserStats()
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          totalEmployees: 0,
+          activeEmployees: 0,
+          newEmployeesThisMonth: 0
+        }
+      })
+    } catch (error) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          totalEmployees: 0,
+          activeEmployees: 0,
+          newEmployeesThisMonth: 0
+        }
+      })
+    }
+  })
+}

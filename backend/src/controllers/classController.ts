@@ -158,4 +158,13 @@ export class ClassController {
       data: stats
     });
   });
+
+  static getClassesStats = asyncHandler(async (req: Request, res: Response) => {
+    const stats = await ClassService.getClassesStats();
+    
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  });
 } 

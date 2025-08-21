@@ -226,22 +226,16 @@
                       </template>
                       <v-list-item-title>Cambiar Tipo</v-list-item-title>
                     </v-list-item>
-                    <v-list-item 
+                                        <v-list-item
                       v-if="item.status !== 'CANCELLED'"
-                      @click="cancelMembership(item)"
+                      @click="openCancelDialog(item)"
                     >
                       <template v-slot:prepend>
                         <v-icon color="error">mdi-close</v-icon>
                       </template>
                       <v-list-item-title>Cancelar</v-list-item-title>
                     </v-list-item>
-                    <v-divider />
-                    <v-list-item @click="deleteMembership(item)" color="error">
-                      <template v-slot:prepend>
-                        <v-icon color="error">mdi-delete</v-icon>
-                      </template>
-                      <v-list-item-title class="text-error">Eliminar</v-list-item-title>
-                    </v-list-item>
+
                   </v-list>
                 </v-menu>
               </template>
@@ -263,17 +257,17 @@
     </v-container>
 
     <!-- Create/Edit Dialog -->
-    <v-dialog v-model="showDialog" max-width="600px">
+    <v-dialog v-model="showDialog" max-width="600px" persistent>
       <v-card>
         <v-card-title>
           {{ isEditing ? 'Editar Membresía' : 'Nueva Membresía' }}
         </v-card-title>
         <v-card-text>
-          <v-form ref="form" v-model="formValid">
+          <v-form ref="formRef" v-model="formValid">
             <v-row>
               <v-col cols="12" md="6">
                 <v-select
-                  v-model="form.userId"
+                  v-model="formData.userId"
                   :items="availableUsers"
                   item-title="name"
                   item-value="id"
@@ -281,63 +275,75 @@
                   variant="outlined"
                   :rules="[rules.required]"
                   required
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-select
-                  v-model="form.type"
+                  v-model="formData.type"
                   :items="typeOptions"
                   label="Tipo"
                   variant="outlined"
                   :rules="[rules.required]"
                   required
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.startDate"
+                  v-model="formData.startDate"
                   label="Fecha de inicio"
                   type="date"
                   variant="outlined"
                   :rules="[rules.required]"
                   required
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.endDate"
+                  v-model="formData.endDate"
                   label="Fecha de fin"
                   type="date"
                   variant="outlined"
                   :rules="[rules.required]"
                   required
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.price"
+                  v-model="formData.price"
                   label="Precio"
                   type="number"
                   step="0.01"
                   variant="outlined"
                   :rules="[rules.required, rules.price]"
                   required
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-select
-                  v-model="form.status"
+                  v-model="formData.status"
                   :items="statusOptions"
                   label="Estado"
                   variant="outlined"
                   :rules="[rules.required]"
                   required
+                  clearable
                 />
               </v-col>
             </v-row>
           </v-form>
         </v-card-text>
         <v-card-actions>
+          <v-btn
+            variant="outlined"
+            @click="clearForm"
+          >
+            Limpiar
+          </v-btn>
           <v-spacer />
           <v-btn
             variant="outlined"
@@ -498,10 +504,10 @@
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="showDeleteDialog" max-width="400px">
       <v-card>
-        <v-card-title>Confirmar Eliminación</v-card-title>
+        <v-card-title>Confirmar Cancelación</v-card-title>
         <v-card-text>
-          ¿Estás seguro de que quieres eliminar esta membresía?
-          Esta acción no se puede deshacer.
+          ¿Estás seguro de que quieres cancelar esta membresía?
+          Esta acción cambiará el estado a "Cancelada" pero mantendrá el historial.
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -512,11 +518,11 @@
             Cancelar
           </v-btn>
           <v-btn
-            color="error"
+            color="warning"
             @click="confirmDelete"
             :loading="membershipsStore.loading"
           >
-            Eliminar
+            Cancelar
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -528,6 +534,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useMembershipsStore, type Membership, type CreateMembershipData, type UpdateMembershipData } from '@/stores/memberships'
 import { useToast } from '@/stores/toast'
+import { api } from '@/utils/api'
 
 const membershipsStore = useMembershipsStore()
 const toast = useToast()
@@ -549,7 +556,8 @@ const newType = ref<'BASIC' | 'PREMIUM' | 'UNLIMITED'>('BASIC')
 const stats = ref<any>(null)
 
 // Form data
-const form = ref<CreateMembershipData & { id?: string; status?: string }>({
+const formRef = ref()
+const formData = ref<CreateMembershipData & { id?: string; status?: string }>({
   userId: '',
   type: 'BASIC',
   startDate: '',
@@ -558,13 +566,26 @@ const form = ref<CreateMembershipData & { id?: string; status?: string }>({
   status: 'ACTIVE'
 })
 
-// Mock data for users (in a real app, this would come from a users store)
-const availableUsers = ref([
-  { id: '1', name: 'Juan Pérez', email: 'juan@example.com' },
-  { id: '2', name: 'María García', email: 'maria@example.com' },
-  { id: '3', name: 'Carlos López', email: 'carlos@example.com' },
-  { id: '4', name: 'Ana Rodríguez', email: 'ana@example.com' }
-])
+// Usuarios reales de la base de datos
+const availableUsers = ref<Array<{ id: string; name: string; email: string }>>([])
+
+// Cargar usuarios desde la base de datos
+const loadUsers = async () => {
+  try {
+    console.log('🔄 Iniciando carga de usuarios...')
+    const response = await api.get('/users', { timeout: 10000 })
+    if (response.data.success) {
+      availableUsers.value = response.data.data.users.map((user: any) => ({
+        id: user.id,
+        name: user.name,
+        email: user.email
+      }))
+      console.log('✅ Usuarios cargados:', availableUsers.value.length)
+    }
+  } catch (error) {
+    console.error('❌ Error cargando usuarios:', error)
+  }
+}
 
 // Table headers
 const headers = [
@@ -577,15 +598,28 @@ const headers = [
   { title: 'Acciones', key: 'actions', sortable: false }
 ]
 
-// Options
+// Options para el formulario (sin 'Todos')
 const typeOptions = [
-  { title: 'Todos', value: 'all' },
   { title: 'Básico', value: 'BASIC' },
   { title: 'Premium', value: 'PREMIUM' },
   { title: 'Ilimitado', value: 'UNLIMITED' }
 ]
 
 const statusOptions = [
+  { title: 'Activa', value: 'ACTIVE' },
+  { title: 'Expirada', value: 'EXPIRED' },
+  { title: 'Cancelada', value: 'CANCELLED' }
+]
+
+// Options para filtros (con 'Todos')
+const filterTypeOptions = [
+  { title: 'Todos', value: 'all' },
+  { title: 'Básico', value: 'BASIC' },
+  { title: 'Premium', value: 'PREMIUM' },
+  { title: 'Ilimitado', value: 'UNLIMITED' }
+]
+
+const filterStatusOptions = [
   { title: 'Todos', value: 'all' },
   { title: 'Activa', value: 'ACTIVE' },
   { title: 'Expirada', value: 'EXPIRED' },
@@ -600,10 +634,15 @@ const rules = {
 
 // Methods
 const loadMemberships = async () => {
-  await Promise.all([
-    membershipsStore.fetchMemberships(membershipsStore.currentPage),
-    loadStats()
-  ])
+  try {
+    console.log('🔄 Iniciando carga de membresías...')
+    await membershipsStore.fetchMemberships(membershipsStore.currentPage)
+    console.log('✅ Membresías cargadas')
+    await loadStats()
+    console.log('✅ Stats cargados')
+  } catch (error) {
+    console.error('Error loading memberships:', error)
+  }
 }
 
 const loadStats = async () => {
@@ -615,14 +654,14 @@ const loadStats = async () => {
 
 const openCreateDialog = () => {
   isEditing.value = false
-  resetForm()
+  clearForm()
   showDialog.value = true
 }
 
 const editMembership = (membership: Membership) => {
   isEditing.value = true
   selectedMembership.value = membership
-  form.value = {
+  formData.value = {
     id: membership.id,
     userId: membership.userId,
     type: membership.type,
@@ -688,7 +727,7 @@ const cancelMembership = async (membership: Membership) => {
   }
 }
 
-const deleteMembership = (membership: Membership) => {
+const openCancelDialog = (membership: Membership) => {
   selectedMembership.value = membership
   showDeleteDialog.value = true
 }
@@ -697,55 +736,65 @@ const confirmDelete = async () => {
   if (!selectedMembership.value) return
   
   try {
-    // Note: This would require a delete endpoint in the backend
-    // await membershipsStore.deleteMembership(selectedMembership.value.id)
+    await membershipsStore.cancelMembership(selectedMembership.value.id)
     showDeleteDialog.value = false
     selectedMembership.value = null
-    toast.show('Membresía eliminada exitosamente', 'success')
     await loadMemberships()
+    toast.show('Membresía cancelada exitosamente', 'success')
   } catch (error) {
-    console.error('Error deleting membership:', error)
+    console.error('Error canceling membership:', error)
+    toast.show('Error al cancelar la membresía', 'error')
   }
 }
 
 const saveMembership = async () => {
   if (!formValid.value) return
 
+  console.log('🔍 saveMembership - Datos del formulario:', formData.value)
+
   try {
-    if (isEditing.value && form.value.id) {
+    if (isEditing.value && formData.value.id) {
       const updateData: UpdateMembershipData = {
-        type: form.value.type,
-        startDate: form.value.startDate,
-        endDate: form.value.endDate,
-        price: form.value.price,
-        status: form.value.status as any
+        type: formData.value.type,
+        startDate: new Date(formData.value.startDate).toISOString(),
+        endDate: new Date(formData.value.endDate).toISOString(),
+        price: Number(formData.value.price),
+        status: formData.value.status as any
       }
-      await membershipsStore.updateMembership(form.value.id, updateData)
+      console.log('📝 Actualizando membresía:', updateData)
+      console.log('📅 Fechas convertidas - Inicio:', updateData.startDate, 'Fin:', updateData.endDate)
+      await membershipsStore.updateMembership(formData.value.id, updateData)
+      toast.show('Membresía actualizada exitosamente', 'success')
     } else {
       const createData: CreateMembershipData = {
-        userId: form.value.userId,
-        type: form.value.type,
-        startDate: form.value.startDate,
-        endDate: form.value.endDate,
-        price: form.value.price
+        userId: formData.value.userId,
+        type: formData.value.type,
+        startDate: new Date(formData.value.startDate).toISOString(),
+        endDate: new Date(formData.value.endDate).toISOString(),
+        price: Number(formData.value.price)
       }
+      console.log('📝 Creando membresía:', createData)
+      console.log('📅 Fechas convertidas - Inicio:', createData.startDate, 'Fin:', createData.endDate)
       await membershipsStore.createMembership(createData)
+      toast.show('Membresía creada exitosamente', 'success')
     }
     
-    closeDialog()
     await loadMemberships()
+    showDialog.value = false
+    clearForm()
   } catch (error) {
-    console.error('Error saving membership:', error)
+    console.error('❌ Error saving membership:', error)
+    toast.show('Error al guardar la membresía', 'error')
   }
 }
 
 const closeDialog = () => {
   showDialog.value = false
-  resetForm()
+  clearForm()
 }
 
-const resetForm = () => {
-  form.value = {
+const clearForm = () => {
+  formData.value = {
     userId: '',
     type: 'BASIC',
     startDate: '',
@@ -798,8 +847,13 @@ const formatDate = (dateString: string) => {
 }
 
 // Lifecycle
-onMounted(() => {
-  loadMemberships()
+onMounted(async () => {
+  try {
+    await loadMemberships()
+    await loadUsers()
+  } catch (error) {
+    console.error('Error in onMounted:', error)
+  }
 })
 </script>
 

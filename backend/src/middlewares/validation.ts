@@ -65,11 +65,10 @@ export const validateCreateUser = [
     .normalizeEmail(),
   body('password')
     .isLength({ min: 6 })
-    .withMessage('La contraseña debe tener al menos 6 caracteres')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('La contraseña debe contener al menos una mayúscula, una minúscula y un número'),
+    .withMessage('La contraseña debe tener al menos 6 caracteres'),
+    // Removida la validación estricta de contraseña para hacerla más amigable
   body('role')
-    .isIn(['CLIENT', 'INSTRUCTOR', 'ADMIN'])
+    .isIn(['CLIENT', 'INSTRUCTOR', 'SUPERVISOR', 'MANAGER', 'ADMIN'])
     .withMessage('El rol debe ser válido'),
   body('phone')
     .optional()
@@ -107,7 +106,7 @@ export const validateUpdateUser = [
     .normalizeEmail(),
   body('role')
     .optional()
-    .isIn(['CLIENT', 'INSTRUCTOR', 'ADMIN'])
+    .isIn(['CLIENT', 'INSTRUCTOR', 'SUPERVISOR', 'MANAGER', 'ADMIN'])
     .withMessage('El rol debe ser válido'),
   body('phone')
     .optional()

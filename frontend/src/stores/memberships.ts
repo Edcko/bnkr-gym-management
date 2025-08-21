@@ -24,7 +24,7 @@ export interface Membership {
 export interface Payment {
   id: string
   amount: number
-  currency: string
+  method: string
   status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED'
   description?: string
   createdAt: string
@@ -133,7 +133,7 @@ export const useMembershipsStore = defineStore('memberships', () => {
       }
     } catch (error) {
       console.error('Error fetching memberships:', error)
-      toast.showToast('Error al cargar las membresías', 'error')
+      toast.show('Error al cargar las membresías', 'error')
     } finally {
       loading.value = false
     }
@@ -150,7 +150,7 @@ export const useMembershipsStore = defineStore('memberships', () => {
       }
     } catch (error) {
       console.error('Error fetching membership:', error)
-      toast.showToast('Error al cargar la membresía', 'error')
+      toast.show('Error al cargar la membresía', 'error')
       return null
     } finally {
       loading.value = false
@@ -167,7 +167,7 @@ export const useMembershipsStore = defineStore('memberships', () => {
       }
     } catch (error) {
       console.error('Error fetching user memberships:', error)
-      toast.showToast('Error al cargar las membresías del usuario', 'error')
+      toast.show('Error al cargar las membresías del usuario', 'error')
       return []
     } finally {
       loading.value = false
@@ -202,7 +202,7 @@ export const useMembershipsStore = defineStore('memberships', () => {
       }
     } catch (error) {
       console.error('Error fetching available plans:', error)
-      toast.showToast('Error al cargar los planes disponibles', 'error')
+      toast.show('Error al cargar los planes disponibles', 'error')
     } finally {
       loading.value = false
     }
@@ -217,13 +217,13 @@ export const useMembershipsStore = defineStore('memberships', () => {
         const newMembership = response.data.data
         memberships.value.unshift(newMembership)
         totalMemberships.value++
-        toast.showToast('Membresía creada exitosamente', 'success')
+        toast.show('Membresía creada exitosamente', 'success')
         return newMembership
       }
     } catch (error: any) {
       console.error('Error creating membership:', error)
       const errorMessage = error.response?.data?.message || 'Error al crear la membresía'
-      toast.showToast(errorMessage, 'error')
+      toast.show(errorMessage, 'error')
       throw error
     } finally {
       loading.value = false
@@ -244,13 +244,13 @@ export const useMembershipsStore = defineStore('memberships', () => {
         if (currentMembership.value?.id === id) {
           currentMembership.value = updatedMembership
         }
-        toast.showToast('Membresía actualizada exitosamente', 'success')
+        toast.show('Membresía actualizada exitosamente', 'success')
         return updatedMembership
       }
     } catch (error: any) {
       console.error('Error updating membership:', error)
       const errorMessage = error.response?.data?.message || 'Error al actualizar la membresía'
-      toast.showToast(errorMessage, 'error')
+      toast.show(errorMessage, 'error')
       throw error
     } finally {
       loading.value = false
@@ -271,13 +271,13 @@ export const useMembershipsStore = defineStore('memberships', () => {
         if (currentMembership.value?.id === id) {
           currentMembership.value = renewedMembership
         }
-        toast.showToast('Membresía renovada exitosamente', 'success')
+        toast.show('Membresía renovada exitosamente', 'success')
         return renewedMembership
       }
     } catch (error: any) {
       console.error('Error renewing membership:', error)
       const errorMessage = error.response?.data?.message || 'Error al renovar la membresía'
-      toast.showToast(errorMessage, 'error')
+      toast.show(errorMessage, 'error')
       throw error
     } finally {
       loading.value = false
@@ -298,13 +298,13 @@ export const useMembershipsStore = defineStore('memberships', () => {
         if (currentMembership.value?.id === id) {
           currentMembership.value = updatedMembership
         }
-        toast.showToast('Tipo de membresía cambiado exitosamente', 'success')
+        toast.show('Tipo de membresía cambiado exitosamente', 'success')
         return updatedMembership
       }
     } catch (error: any) {
       console.error('Error changing membership type:', error)
       const errorMessage = error.response?.data?.message || 'Error al cambiar el tipo de membresía'
-      toast.showToast(errorMessage, 'error')
+      toast.show(errorMessage, 'error')
       throw error
     } finally {
       loading.value = false
@@ -325,13 +325,13 @@ export const useMembershipsStore = defineStore('memberships', () => {
         if (currentMembership.value?.id === id) {
           currentMembership.value = cancelledMembership
         }
-        toast.showToast('Membresía cancelada exitosamente', 'success')
+        toast.show('Membresía cancelada exitosamente', 'success')
         return cancelledMembership
       }
     } catch (error: any) {
       console.error('Error cancelling membership:', error)
       const errorMessage = error.response?.data?.message || 'Error al cancelar la membresía'
-      toast.showToast(errorMessage, 'error')
+      toast.show(errorMessage, 'error')
       throw error
     } finally {
       loading.value = false
@@ -352,13 +352,44 @@ export const useMembershipsStore = defineStore('memberships', () => {
         if (currentMembership.value?.id === id) {
           currentMembership.value = frozenMembership
         }
-        toast.showToast('Membresía congelada exitosamente', 'success')
+        toast.show('Membresía congelada exitosamente', 'success')
         return frozenMembership
       }
     } catch (error: any) {
       console.error('Error freezing membership:', error)
       const errorMessage = error.response?.data?.message || 'Error al congelar la membresía'
-      toast.showToast(errorMessage, 'error')
+      toast.show(errorMessage, 'error')
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const deleteMembership = async (id: string) => {
+    try {
+      loading.value = true
+      const response = await api.delete(`/memberships/${id}`)
+      
+      if (response.data.success) {
+        // Remove from local state
+        const index = memberships.value.findIndex(membership => membership.id === id)
+        if (index !== -1) {
+          memberships.value.splice(index, 1)
+          totalMemberships.value--
+        }
+        
+        // Clear current membership if it was deleted
+        if (currentMembership.value?.id === id) {
+          currentMembership.value = null
+        }
+        
+        toast.show('Membresía eliminada exitosamente', 'success')
+        return true
+      }
+    } catch (error: any) {
+      console.error('Error deleting membership:', error)
+      const errorMessage = error.response?.data?.message || 'Error al eliminar la membresía'
+      toast.show(errorMessage, 'error')
       throw error
     } finally {
       loading.value = false
@@ -374,7 +405,7 @@ export const useMembershipsStore = defineStore('memberships', () => {
       }
     } catch (error) {
       console.error('Error fetching membership stats:', error)
-      toast.showToast('Error al cargar las estadísticas', 'error')
+      toast.show('Error al cargar las estadísticas', 'error')
     }
   }
 
@@ -456,6 +487,7 @@ export const useMembershipsStore = defineStore('memberships', () => {
     changeMembershipType,
     cancelMembership,
     freezeMembership,
+    deleteMembership,
     getMembershipStats,
     hasActiveMembership,
     getRemainingDays,

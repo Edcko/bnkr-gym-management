@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import axios from 'axios'
+import { useToast } from './toast'
+import { api } from '@/utils/api'
 
+// Interfaces
 interface Instructor {
   id: string
   name: string
@@ -18,320 +20,210 @@ interface Class {
   isActive: boolean
   createdAt: string
   updatedAt: string
+  instructorId: string
   instructor: Instructor
   _count?: {
     reservations: number
   }
 }
 
-interface ClassSchedule {
-  id: string
-  classId: string
-  dayOfWeek: number
-  startTime: string
-  endTime: string
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
+interface CreateClassData {
+  name: string
+  description?: string
+  duration: number
+  maxCapacity: number
+  price: number
+  instructorId: string
+}
+
+interface UpdateClassData extends Partial<CreateClassData> {
+  isActive?: boolean
 }
 
 interface ClassStats {
-  totalReservations: number
-  confirmedReservations: number
-  cancelledReservations: number
-  utilizationRate: number
-  availableSpots: number
-}
-
-interface PaginationParams {
-  page?: number
-  limit?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-
-interface PaginatedResponse<T> {
-  classes: T[]
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    pages: number
-  }
+  total: number
+  active: number
+  instructors: number
+  reservations: number
 }
 
 export const useClassesStore = defineStore('classes', () => {
+  const toast = useToast()
+  
   // Estado
   const classes = ref<Class[]>([])
-  const currentClass = ref<Class | null>(null)
-  const classSchedule = ref<ClassSchedule[]>([])
-  const classStats = ref<ClassStats | null>(null)
-  const isLoading = ref(false)
+  const loading = ref(false)
+  const saving = ref(false)
+  const deleting = ref(false)
+  const stats = ref<ClassStats | null>(null)
   const error = ref<string | null>(null)
-  const pagination = ref({
-    page: 1,
-    limit: 10,
-    total: 0,
-    pages: 0
-  })
 
   // Getters
-  const availableClasses = computed(() => 
-    classes.value.filter(c => c._count && c._count.reservations < c.maxCapacity)
+  const activeClasses = computed(() => 
+    classes.value.filter(c => c.isActive)
+  )
+
+  const inactiveClasses = computed(() => 
+    classes.value.filter(c => !c.isActive)
   )
 
   const classesByInstructor = computed(() => (instructorId: string) =>
-    classes.value.filter(c => c.instructor.id === instructorId)
+    classes.value.filter(c => c.instructorId === instructorId)
   )
 
   // Actions
-  const fetchClasses = async (params: PaginationParams = {}) => {
+  const fetchAll = async () => {
     try {
-      isLoading.value = true
+      loading.value = true
       error.value = null
 
-      const response = await axios.get('/api/classes', { params })
-      const data: PaginatedResponse<Class> = response.data.data
-
-      classes.value = data.classes
-      pagination.value = data.pagination
-
-      return data
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Error al obtener clases'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const fetchAvailableClasses = async (params: PaginationParams = {}) => {
-    try {
-      isLoading.value = true
-      error.value = null
-
-      const response = await axios.get('/api/classes/available', { params })
-      const data: PaginatedResponse<Class> = response.data.data
-
-      classes.value = data.classes
-      pagination.value = data.pagination
-
-      return data
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Error al obtener clases disponibles'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const fetchClassById = async (id: string) => {
-    try {
-      isLoading.value = true
-      error.value = null
-
-      const response = await axios.get(`/api/classes/${id}`)
-      currentClass.value = response.data.data
-
-      return currentClass.value
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Error al obtener la clase'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const createClass = async (classData: Omit<Class, 'id' | 'createdAt' | 'updatedAt' | 'instructor' | '_count'>) => {
-    try {
-      isLoading.value = true
-      error.value = null
-
-      const response = await axios.post('/api/classes', classData)
-      const newClass = response.data.data
-
-      // Agregar a la lista
-      classes.value.unshift(newClass)
-
-      return newClass
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Error al crear la clase'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const updateClass = async (id: string, classData: Partial<Class>) => {
-    try {
-      isLoading.value = true
-      error.value = null
-
-      const response = await axios.put(`/api/classes/${id}`, classData)
-      const updatedClass = response.data.data
-
-      // Actualizar en la lista
-      const index = classes.value.findIndex(c => c.id === id)
-      if (index !== -1) {
-        classes.value[index] = updatedClass
+      console.log('🔄 Fetching classes...')
+      const response = await api.get('/classes')
+      
+      if (response.data.success) {
+        classes.value = response.data.data.classes || []
+        console.log('✅ Classes loaded:', classes.value.length)
+      } else {
+        console.error('❌ Error loading classes:', response.data.message)
+        error.value = response.data.message || 'Error desconocido'
       }
-
-      // Actualizar clase actual si es la misma
-      if (currentClass.value?.id === id) {
-        currentClass.value = updatedClass
-      }
-
-      return updatedClass
     } catch (err: any) {
-      error.value = err.response?.data?.message || 'Error al actualizar la clase'
+      console.error('❌ Error fetching classes:', err)
+      const errorMessage = err.response?.data?.message || 'Error al cargar las clases'
+      error.value = errorMessage
+      toast.show(errorMessage, 'error')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const fetchStats = async () => {
+    try {
+      // DEBUG: Extraer token para pruebas manuales
+      const token = localStorage.getItem('token')
+      console.log('🔑 TOKEN PARA PRUEBAS:', token)
+      console.log('🔑 TOKEN COMPLETO:', token ? `Bearer ${token}` : 'No token')
+      
+      console.log('🔄 Fetching class stats...')
+      const response = await api.get('/classes/stats')
+      
+      if (response.data.success) {
+        stats.value = response.data.data
+        console.log('✅ Class stats loaded:', stats.value)
+      } else {
+        console.error('❌ Error loading stats:', response.data.message)
+      }
+    } catch (err: any) {
+      console.error('❌ Error fetching class stats:', err)
+      // No mostrar toast para stats, solo log
+    }
+  }
+
+  const createClass = async (classData: CreateClassData) => {
+    try {
+      saving.value = true
+      error.value = null
+
+      console.log('🔄 Creating class:', classData)
+      const response = await api.post('/classes', classData)
+      
+      if (response.data.success) {
+        const newClass = response.data.data
+        classes.value.unshift(newClass)
+        console.log('✅ Class created:', newClass)
+        toast.show('Clase creada exitosamente', 'success')
+        return newClass
+      } else {
+        throw new Error(response.data.message || 'Error desconocido')
+      }
+    } catch (err: any) {
+      console.error('❌ Error creating class:', err)
+      const errorMessage = err.response?.data?.message || 'Error al crear la clase'
+      error.value = errorMessage
+      toast.show(errorMessage, 'error')
       throw err
     } finally {
-      isLoading.value = false
+      saving.value = false
+    }
+  }
+
+  const updateClass = async (id: string, classData: UpdateClassData) => {
+    try {
+      saving.value = true
+      error.value = null
+
+      console.log('🔄 Updating class:', id, classData)
+      const response = await api.put(`/classes/${id}`, classData)
+      
+      if (response.data.success) {
+        const updatedClass = response.data.data
+        
+        // Actualizar en la lista
+        const index = classes.value.findIndex(c => c.id === id)
+        if (index !== -1) {
+          classes.value[index] = updatedClass
+        }
+        
+        console.log('✅ Class updated:', updatedClass)
+        toast.show('Clase actualizada exitosamente', 'success')
+        return updatedClass
+      } else {
+        throw new Error(response.data.message || 'Error desconocido')
+      }
+    } catch (err: any) {
+      console.error('❌ Error updating class:', err)
+      const errorMessage = err.response?.data?.message || 'Error al actualizar la clase'
+      error.value = errorMessage
+      toast.show(errorMessage, 'error')
+      throw err
+    } finally {
+      saving.value = false
     }
   }
 
   const deleteClass = async (id: string) => {
     try {
-      isLoading.value = true
+      deleting.value = true
       error.value = null
 
-      await axios.delete(`/api/classes/${id}`)
-
-      // Remover de la lista
-      classes.value = classes.value.filter(c => c.id !== id)
-
-      // Limpiar clase actual si es la misma
-      if (currentClass.value?.id === id) {
-        currentClass.value = null
+      console.log('🔄 Deleting class:', id)
+      const response = await api.delete(`/classes/${id}`)
+      
+      if (response.data.success) {
+        // Remover de la lista
+        classes.value = classes.value.filter(c => c.id !== id)
+        console.log('✅ Class deleted:', id)
+        toast.show('Clase eliminada exitosamente', 'success')
+        return true
+      } else {
+        throw new Error(response.data.message || 'Error desconocido')
       }
+    } catch (err: any) {
+      console.error('❌ Error deleting class:', err)
+      const errorMessage = err.response?.data?.message || 'Error al eliminar la clase'
+      error.value = errorMessage
+      toast.show(errorMessage, 'error')
+      throw err
+    } finally {
+      deleting.value = false
+    }
+  }
 
+  const toggleClassStatus = async (id: string) => {
+    try {
+      const classItem = classes.value.find(c => c.id === id)
+      if (!classItem) throw new Error('Clase no encontrada')
+
+      const newStatus = !classItem.isActive
+      console.log('🔄 Toggling class status:', id, 'to', newStatus)
+      
+      await updateClass(id, { isActive: newStatus })
+      
+      console.log('✅ Class status toggled:', id, 'to', newStatus)
       return true
     } catch (err: any) {
-      error.value = err.response?.data?.message || 'Error al eliminar la clase'
+      console.error('❌ Error toggling class status:', err)
       throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const fetchClassesByInstructor = async (instructorId: string, params: PaginationParams = {}) => {
-    try {
-      isLoading.value = true
-      error.value = null
-
-      const response = await axios.get(`/api/classes/instructor/${instructorId}`, { params })
-      const data: PaginatedResponse<Class> = response.data.data
-
-      classes.value = data.classes
-      pagination.value = data.pagination
-
-      return data
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Error al obtener clases del instructor'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const fetchClassSchedule = async (classId: string) => {
-    try {
-      isLoading.value = true
-      error.value = null
-
-      const response = await axios.get(`/api/classes/${classId}/schedule`)
-      classSchedule.value = response.data.data
-
-      return classSchedule.value
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Error al obtener horarios de la clase'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const createClassSchedule = async (classId: string, scheduleData: Array<{
-    dayOfWeek: number
-    startTime: string
-    endTime: string
-  }>) => {
-    try {
-      isLoading.value = true
-      error.value = null
-
-      const response = await axios.post(`/api/classes/${classId}/schedule`, { scheduleData })
-      const schedules = response.data.data
-
-      // Actualizar horarios
-      classSchedule.value = [...classSchedule.value, ...schedules]
-
-      return schedules
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Error al crear horarios'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const updateClassSchedule = async (scheduleId: string, scheduleData: Partial<ClassSchedule>) => {
-    try {
-      isLoading.value = true
-      error.value = null
-
-      const response = await axios.put(`/api/classes/schedule/${scheduleId}`, scheduleData)
-      const updatedSchedule = response.data.data
-
-      // Actualizar en la lista
-      const index = classSchedule.value.findIndex(s => s.id === scheduleId)
-      if (index !== -1) {
-        classSchedule.value[index] = updatedSchedule
-      }
-
-      return updatedSchedule
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Error al actualizar horario'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const deleteClassSchedule = async (scheduleId: string) => {
-    try {
-      isLoading.value = true
-      error.value = null
-
-      await axios.delete(`/api/classes/schedule/${scheduleId}`)
-
-      // Remover de la lista
-      classSchedule.value = classSchedule.value.filter(s => s.id !== scheduleId)
-
-      return true
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Error al eliminar horario'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const fetchClassStats = async (classId: string) => {
-    try {
-      isLoading.value = true
-      error.value = null
-
-      const response = await axios.get(`/api/classes/${classId}/stats`)
-      classStats.value = response.data.data
-
-      return classStats.value
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Error al obtener estadísticas de la clase'
-      throw err
-    } finally {
-      isLoading.value = false
     }
   }
 
@@ -339,40 +231,27 @@ export const useClassesStore = defineStore('classes', () => {
     error.value = null
   }
 
-  const clearCurrentClass = () => {
-    currentClass.value = null
-    classSchedule.value = []
-    classStats.value = null
-  }
-
   return {
     // Estado
     classes,
-    currentClass,
-    classSchedule,
-    classStats,
-    isLoading,
+    loading,
+    saving,
+    deleting,
+    stats,
     error,
-    pagination,
 
     // Getters
-    availableClasses,
+    activeClasses,
+    inactiveClasses,
     classesByInstructor,
 
     // Actions
-    fetchClasses,
-    fetchAvailableClasses,
-    fetchClassById,
+    fetchAll,
+    fetchStats,
     createClass,
     updateClass,
     deleteClass,
-    fetchClassesByInstructor,
-    fetchClassSchedule,
-    createClassSchedule,
-    updateClassSchedule,
-    deleteClassSchedule,
-    fetchClassStats,
-    clearError,
-    clearCurrentClass
+    toggleClassStatus,
+    clearError
   }
 }) 

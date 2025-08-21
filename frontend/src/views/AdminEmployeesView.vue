@@ -57,8 +57,8 @@
               <div class="d-flex align-center">
                 <v-icon color="info" size="large" class="mr-3">mdi-shield-crown</v-icon>
                 <div>
-                  <div class="text-h6">{{ stats.admins }}</div>
-                  <div class="text-caption">Administradores</div>
+                  <div class="text-h6">{{ stats.total }}</div>
+                  <div class="text-caption">Total</div>
                 </div>
               </div>
             </v-card-text>
@@ -93,7 +93,7 @@
                     variant="outlined"
                     density="compact"
                     clearable
-                    @update:model-value="employeesStore.searchEmployees"
+                    @update:model-value="handleSearch"
                   />
                 </v-col>
                 <v-col cols="12" md="3">
@@ -103,7 +103,7 @@
                     label="Rol"
                     variant="outlined"
                     density="compact"
-                    @update:model-value="employeesStore.setFilterRole"
+                    @update:model-value="handleRoleFilter"
                   />
                 </v-col>
                 <v-col cols="12" md="3">
@@ -113,7 +113,7 @@
                     label="Estado"
                     variant="outlined"
                     density="compact"
-                    @update:model-value="employeesStore.setFilterStatus"
+                    @update:model-value="handleStatusFilter"
                   />
                 </v-col>
                 <v-col cols="12" md="2">
@@ -136,8 +136,9 @@
         <v-col cols="12">
           <v-card>
             <v-data-table
+              :key="tableKey"
               :headers="headers"
-              :items="employeesStore.filteredEmployees"
+              :items="employeesStore.filteredItems"
               :loading="employeesStore.loading"
               :items-per-page="10"
               class="elevation-1"
@@ -145,8 +146,8 @@
               <!-- Role Column -->
               <template v-slot:item.role="{ item }">
                 <v-chip
-                  :color="item.role === 'ADMIN' ? 'error' : 'warning'"
-                  :text="item.role === 'ADMIN' ? 'Administrador' : 'Instructor'"
+                  :color="getRoleColor(item.role)"
+                  :text="getRoleLabel(item.role)"
                   size="small"
                 />
               </template>
@@ -228,88 +229,97 @@
     </v-container>
 
     <!-- Create/Edit Dialog -->
-    <v-dialog v-model="showDialog" max-width="600px">
+    <v-dialog v-model="showDialog" max-width="600px" persistent>
       <v-card>
         <v-card-title>
           {{ isEditing ? 'Editar Empleado' : 'Nuevo Empleado' }}
         </v-card-title>
         <v-card-text>
-          <v-form ref="form" v-model="formValid">
+          <v-form ref="formRef" v-model="formValid">
             <v-row>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.name"
+                  v-model="formData.name"
                   label="Nombre completo"
                   variant="outlined"
                   :rules="[rules.required]"
                   required
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.email"
+                  v-model="formData.email"
                   label="Email"
                   type="email"
                   variant="outlined"
                   :rules="[rules.required, rules.email]"
                   required
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.phone"
+                  v-model="formData.phone"
                   label="Teléfono"
                   variant="outlined"
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-select
-                  v-model="form.role"
+                  v-model="formData.role"
                   :items="roleOptions"
                   label="Rol"
                   variant="outlined"
                   :rules="[rules.required]"
                   required
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.dateOfBirth"
+                  v-model="formData.dateOfBirth"
                   label="Fecha de nacimiento"
                   type="date"
                   variant="outlined"
+                  clearable
                 />
               </v-col>
               <v-col cols="12">
                 <v-textarea
-                  v-model="form.address"
+                  v-model="formData.address"
                   label="Dirección"
                   variant="outlined"
                   rows="2"
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.emergencyContact"
+                  v-model="formData.emergencyContact"
                   label="Contacto de emergencia"
                   variant="outlined"
+                  clearable
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.emergencyPhone"
+                  v-model="formData.emergencyPhone"
                   label="Teléfono de emergencia"
                   variant="outlined"
+                  clearable
                 />
               </v-col>
               <v-col cols="12" v-if="!isEditing">
                 <v-text-field
-                  v-model="form.password"
+                  v-model="formData.password"
                   label="Contraseña"
                   type="password"
                   variant="outlined"
                   :rules="[rules.required, rules.password]"
                   required
+                  clearable
                 />
               </v-col>
             </v-row>
@@ -319,6 +329,12 @@
           <v-spacer />
           <v-btn
             variant="outlined"
+            @click="clearForm"
+          >
+            Limpiar
+          </v-btn>
+          <v-btn
+            variant="outlined"
             @click="closeDialog"
           >
             Cancelar
@@ -326,7 +342,7 @@
           <v-btn
             color="primary"
             @click="saveEmployee"
-            :loading="employeesStore.loading"
+            :loading="employeesStore.saving"
             :disabled="!formValid"
           >
             {{ isEditing ? 'Actualizar' : 'Crear' }}
@@ -367,8 +383,8 @@
               </template>
               <v-list-item-title>
                 <v-chip
-                  :color="selectedEmployee.role === 'ADMIN' ? 'error' : 'warning'"
-                  :text="selectedEmployee.role === 'ADMIN' ? 'Administrador' : 'Instructor'"
+                  :color="selectedEmployee.role === 'INSTRUCTOR' ? 'warning' : 'info'"
+                  :text="selectedEmployee.role === 'INSTRUCTOR' ? 'Instructor' : 'Empleado'"
                   size="small"
                 />
               </v-list-item-title>
@@ -489,18 +505,20 @@ const isEditing = ref(false)
 const selectedEmployee = ref<Employee | null>(null)
 const formValid = ref(false)
 const searchQuery = ref('')
-const filterRole = ref<'all' | 'ADMIN' | 'INSTRUCTOR'>('all')
+const filterRole = ref<'all' | 'INSTRUCTOR' | 'SUPERVISOR' | 'MANAGER' | 'ADMIN'>('all')
 const filterStatus = ref<'all' | 'active' | 'inactive'>('all')
-const newRole = ref<'ADMIN' | 'INSTRUCTOR'>('INSTRUCTOR')
+const newRole = ref<'INSTRUCTOR' | 'SUPERVISOR' | 'MANAGER' | 'ADMIN'>('INSTRUCTOR')
+const tableKey = ref(0)
 
 // Form data
-const form = ref<CreateEmployeeData & { id?: string }>({
+const formRef = ref()
+const formData = ref<CreateEmployeeData & { id?: string }>({
   name: '',
   email: '',
   password: '',
   role: 'INSTRUCTOR',
   phone: '',
-  dateOfBirth: '',
+  dateOfBirth: undefined,
   address: '',
   emergencyContact: '',
   emergencyPhone: ''
@@ -520,8 +538,10 @@ const headers = [
 // Options
 const roleOptions = [
   { title: 'Todos', value: 'all' },
-  { title: 'Administradores', value: 'ADMIN' },
-  { title: 'Instructores', value: 'INSTRUCTOR' }
+  { title: 'Instructores', value: 'INSTRUCTOR' },
+  { title: 'Supervisores', value: 'SUPERVISOR' },
+  { title: 'Gerentes', value: 'MANAGER' },
+  { title: 'Administradores', value: 'ADMIN' }
 ]
 
 const statusOptions = [
@@ -549,30 +569,77 @@ const rules = {
 }
 
 // Computed
-const stats = computed(() => employeesStore.getEmployeeStats())
+const stats = computed(() => ({
+  total: employeesStore.allItems.length,
+  active: employeesStore.activeEmployees.length,
+  instructors: employeesStore.instructors?.length || 0,
+  supervisors: employeesStore.supervisors?.length || 0,
+  managers: employeesStore.managers?.length || 0,
+  admins: employeesStore.admins?.length || 0
+}))
 
 // Methods
 const loadEmployees = async () => {
-  await employeesStore.fetchEmployees(employeesStore.currentPage)
+  await employeesStore.fetchAll()
+}
+
+const getRoleColor = (role: string) => {
+  switch (role) {
+    case 'ADMIN': return 'error'
+    case 'MANAGER': return 'warning'
+    case 'SUPERVISOR': return 'info'
+    case 'INSTRUCTOR': return 'success'
+    default: return 'grey'
+  }
+}
+
+const getRoleLabel = (role: string) => {
+  switch (role) {
+    case 'ADMIN': return 'Administrador'
+    case 'MANAGER': return 'Gerente'
+    case 'SUPERVISOR': return 'Supervisor'
+    case 'INSTRUCTOR': return 'Instructor'
+    default: return role
+  }
+}
+
+const handleSearch = (query: string) => {
+  employeesStore.setSearchQuery(query)
+}
+
+const handleRoleFilter = (role: string) => {
+  if (role === 'all') {
+    employeesStore.clearFilters()
+  } else {
+    employeesStore.setFilter('role', role)
+  }
+}
+
+const handleStatusFilter = (status: string) => {
+  if (status === 'all') {
+    employeesStore.clearFilters()
+  } else {
+    employeesStore.setFilter('isActive', status === 'active')
+  }
 }
 
 const openCreateDialog = () => {
   isEditing.value = false
-  resetForm()
+  clearForm()
   showDialog.value = true
 }
 
 const editEmployee = (employee: Employee) => {
   isEditing.value = true
   selectedEmployee.value = employee
-  form.value = {
+  formData.value = {
     id: employee.id,
     name: employee.name,
     email: employee.email,
     password: '',
     role: employee.role,
     phone: employee.phone || '',
-    dateOfBirth: employee.dateOfBirth || '',
+    dateOfBirth: employee.dateOfBirth || undefined,
     address: employee.address || '',
     emergencyContact: employee.emergencyContact || '',
     emergencyPhone: employee.emergencyPhone || ''
@@ -587,7 +654,16 @@ const viewEmployee = (employee: Employee) => {
 
 const changeRole = (employee: Employee) => {
   selectedEmployee.value = employee
-  newRole.value = employee.role === 'ADMIN' ? 'INSTRUCTOR' : 'ADMIN'
+  // Permitir cambiar entre roles válidos del schema
+  const currentRole = employee.role
+  const availableRoles: ('INSTRUCTOR' | 'SUPERVISOR' | 'MANAGER' | 'ADMIN')[] = ['INSTRUCTOR', 'SUPERVISOR', 'MANAGER', 'ADMIN']
+  const currentIndex = availableRoles.indexOf(currentRole)
+  const nextIndex = (currentIndex + 1) % availableRoles.length
+  newRole.value = availableRoles[nextIndex]
+  
+  console.log('🔄 changeRole - Empleado:', employee.name)
+  console.log('🔄 changeRole - Rol actual:', currentRole)
+  console.log('🔄 changeRole - Nuevo rol:', newRole.value)
   showRoleDialog.value = true
 }
 
@@ -595,17 +671,39 @@ const confirmChangeRole = async () => {
   if (!selectedEmployee.value) return
   
   try {
-    await employeesStore.changeEmployeeRole(selectedEmployee.value.id, newRole.value)
+    console.log('🔄 confirmChangeRole - Cambiando rol de:', selectedEmployee.value.name)
+    console.log('🔄 confirmChangeRole - Nuevo rol:', newRole.value)
+    
+    // Actualizar el rol
+    await employeesStore.updateEmployee(selectedEmployee.value.id, { role: newRole.value })
+    
+    // Cerrar el diálogo
     showRoleDialog.value = false
     selectedEmployee.value = null
+    
+    // Forzar recarga completa de empleados
+    console.log('🔄 confirmChangeRole - Recargando empleados...')
+    await employeesStore.fetchAll()
+    
+    // Forzar re-render de la tabla
+    tableKey.value++
+    
+    // Mostrar mensaje de éxito
+    console.log('✅ Rol cambiado exitosamente')
+    
   } catch (error) {
-    console.error('Error changing employee role:', error)
+    console.error('❌ Error changing employee role:', error)
   }
 }
 
 const toggleEmployeeStatus = async (employee: Employee) => {
   try {
-    await employeesStore.toggleEmployeeStatus(employee.id)
+    if (employee.isActive) {
+      await employeesStore.deactivateEmployee(employee.id)
+    } else {
+      await employeesStore.activateEmployee(employee.id)
+    }
+    await loadEmployees()
   } catch (error) {
     console.error('Error toggling employee status:', error)
   }
@@ -623,6 +721,7 @@ const confirmDelete = async () => {
     await employeesStore.deleteEmployee(selectedEmployee.value.id)
     showDeleteDialog.value = false
     selectedEmployee.value = null
+    await loadEmployees()
   } catch (error) {
     console.error('Error deleting employee:', error)
   }
@@ -632,53 +731,56 @@ const saveEmployee = async () => {
   if (!formValid.value) return
 
   try {
-    if (isEditing.value && form.value.id) {
+    if (isEditing.value && formData.value.id) {
       const updateData: UpdateEmployeeData = {
-        name: form.value.name,
-        email: form.value.email,
-        role: form.value.role,
-        phone: form.value.phone,
-        dateOfBirth: form.value.dateOfBirth,
-        address: form.value.address,
-        emergencyContact: form.value.emergencyContact,
-        emergencyPhone: form.value.emergencyPhone
+        name: formData.value.name,
+        email: formData.value.email,
+        role: formData.value.role,
+        phone: formData.value.phone,
+        dateOfBirth: formData.value.dateOfBirth ? new Date(formData.value.dateOfBirth).toISOString() : undefined,
+        address: formData.value.address,
+        emergencyContact: formData.value.emergencyContact,
+        emergencyPhone: formData.value.emergencyPhone
       }
-      await employeesStore.updateEmployee(form.value.id, updateData)
+      console.log('📝 saveEmployee - Actualizando empleado:', formData.value.id)
+      console.log('📝 saveEmployee - Datos de actualización:', updateData)
+      await employeesStore.updateEmployee(formData.value.id, updateData)
     } else {
       const createData: CreateEmployeeData = {
-        name: form.value.name,
-        email: form.value.email,
-        password: form.value.password,
-        role: form.value.role,
-        phone: form.value.phone,
-        dateOfBirth: form.value.dateOfBirth,
-        address: form.value.address,
-        emergencyContact: form.value.emergencyContact,
-        emergencyPhone: form.value.emergencyPhone
+        name: formData.value.name,
+        email: formData.value.email,
+        password: formData.value.password,
+        role: formData.value.role,
+        phone: formData.value.phone,
+        dateOfBirth: formData.value.dateOfBirth ? new Date(formData.value.dateOfBirth).toISOString() : undefined,
+        address: formData.value.address,
+        emergencyContact: formData.value.emergencyContact,
+        emergencyPhone: formData.value.emergencyPhone
       }
+      console.log('📝 saveEmployee - Creando nuevo empleado')
+      console.log('📝 saveEmployee - Datos de creación:', createData)
       await employeesStore.createEmployee(createData)
     }
     
     closeDialog()
     await loadEmployees()
   } catch (error) {
-    console.error('Error saving employee:', error)
+    console.error('❌ Error saving employee:', error)
   }
 }
 
 const closeDialog = () => {
   showDialog.value = false
-  resetForm()
 }
 
-const resetForm = () => {
-  form.value = {
+const clearForm = () => {
+  formData.value = {
     name: '',
     email: '',
     password: '',
     role: 'INSTRUCTOR',
     phone: '',
-    dateOfBirth: '',
+    dateOfBirth: undefined,
     address: '',
     emergencyContact: '',
     emergencyPhone: ''
@@ -691,8 +793,9 @@ const formatDate = (dateString: string) => {
 }
 
 // Lifecycle
-onMounted(() => {
-  loadEmployees()
+onMounted(async () => {
+  await employeesStore.init()
+  await loadEmployees()
 })
 </script>
 

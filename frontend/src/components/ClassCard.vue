@@ -181,7 +181,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuth } from '@/stores/auth'
 
 // Props
 interface Props {
@@ -214,7 +214,7 @@ const emit = defineEmits<{
 
 // Router y store
 const router = useRouter()
-const authStore = useAuthStore()
+const authStore = useAuth()
 
 // Estado
 const isReserving = ref(false)

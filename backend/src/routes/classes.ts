@@ -17,6 +17,7 @@ const router = Router();
 // Rutas públicas
 router.get('/', validatePagination, ClassController.getAllClasses);
 router.get('/available', validatePagination, ClassController.getAvailableClasses);
+router.get('/stats', ClassController.getClassesStats); // Estadísticas generales
 router.get('/:id', validateIdParam, ClassController.getClassById);
 router.get('/:classId/schedule', validateIdParam, ClassController.getClassSchedule);
 router.get('/:classId/stats', validateIdParam, ClassController.getClassStats);

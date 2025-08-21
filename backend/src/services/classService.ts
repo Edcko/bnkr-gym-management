@@ -442,4 +442,33 @@ export class ClassService {
       availableSpots: classData ? classData.maxCapacity - confirmedReservations : 0
     };
   }
+
+  static async getClassesStats() {
+    const [
+      totalClasses,
+      activeClasses,
+      totalInstructors,
+      totalReservationsToday
+    ] = await Promise.all([
+      prisma.class.count(),
+      prisma.class.count({ where: { isActive: true } }),
+      prisma.user.count({ where: { role: 'INSTRUCTOR' } }),
+      prisma.reservation.count({
+        where: {
+          status: 'CONFIRMED',
+          createdAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+            lte: new Date(new Date().setHours(23, 59, 59, 999))
+          }
+        }
+      })
+    ]);
+
+    return {
+      total: totalClasses,
+      active: activeClasses,
+      instructors: totalInstructors,
+      reservations: totalReservationsToday
+    };
+  }
 } 

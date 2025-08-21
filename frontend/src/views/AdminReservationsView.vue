@@ -136,6 +136,7 @@
         <v-col cols="12">
           <v-card>
             <v-data-table
+              :key="tableKey"
               :headers="headers"
               :items="reservationsStore.filteredReservations"
               :loading="reservationsStore.loading"
@@ -261,11 +262,11 @@
           {{ isEditing ? 'Editar Reserva' : 'Nueva Reserva' }}
         </v-card-title>
         <v-card-text>
-          <v-form ref="form" v-model="formValid">
+          <v-form ref="formRef" v-model="formValid">
             <v-row>
               <v-col cols="12" md="6">
                 <v-select
-                  v-model="form.classId"
+                  v-model="formData.classId"
                   :items="availableClasses"
                   item-title="name"
                   item-value="id"
@@ -277,7 +278,7 @@
               </v-col>
               <v-col cols="12" md="6">
                 <v-select
-                  v-model="form.instructorId"
+                  v-model="formData.instructorId"
                   :items="availableInstructors"
                   item-title="name"
                   item-value="id"
@@ -289,27 +290,27 @@
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.startTime"
+                  v-model="formData.startTime"
                   label="Fecha y hora de inicio"
                   type="datetime-local"
                   variant="outlined"
-                  :rules="[rules.required]"
+                  :rules="[rules.required, rules.validDate]"
                   required
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.endTime"
+                  v-model="formData.endTime"
                   label="Fecha y hora de fin"
                   type="datetime-local"
                   variant="outlined"
-                  :rules="[rules.required]"
+                  :rules="[rules.required, rules.validDate, rules.endTimeAfterStart]"
                   required
                 />
               </v-col>
               <v-col cols="12">
                 <v-textarea
-                  v-model="form.notes"
+                  v-model="formData.notes"
                   label="Notas"
                   variant="outlined"
                   rows="3"
@@ -439,6 +440,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useReservationsStore, type Reservation, type CreateReservationData, type UpdateReservationData } from '@/stores/reservations'
 import { useToast } from '@/stores/toast'
+import { api } from '@/utils/api'
 
 const reservationsStore = useReservationsStore()
 const toast = useToast()
@@ -454,9 +456,11 @@ const searchQuery = ref('')
 const filterStatus = ref<'all' | 'PENDING' | 'CONFIRMED' | 'CANCELLED'>('all')
 const filterDate = ref('')
 const stats = ref<any>(null)
+const tableKey = ref(0)
 
 // Form data
-const form = ref<CreateReservationData & { id?: string }>({
+const formRef = ref()
+const formData = ref<CreateReservationData & { id?: string }>({
   classId: '',
   instructorId: '',
   startTime: '',
@@ -464,20 +468,9 @@ const form = ref<CreateReservationData & { id?: string }>({
   notes: ''
 })
 
-// Mock data for classes and instructors (in a real app, these would come from stores)
-const availableClasses = ref([
-  { id: '1', name: 'Yoga Básico' },
-  { id: '2', name: 'Spinning' },
-  { id: '3', name: 'Pilates' },
-  { id: '4', name: 'CrossFit' }
-])
-
-const availableInstructors = ref([
-  { id: '1', name: 'María García' },
-  { id: '2', name: 'Carlos López' },
-  { id: '3', name: 'Ana Rodríguez' },
-  { id: '4', name: 'Luis Martínez' }
-])
+// Data for classes and instructors (will be loaded from backend)
+const availableClasses = ref<Array<{id: string, name: string}>>([])
+const availableInstructors = ref<Array<{id: string, name: string}>>([])
 
 // Table headers
 const headers = [
@@ -499,21 +492,91 @@ const statusOptions = [
 
 // Validation rules
 const rules = {
-  required: (value: string) => !!value || 'Este campo es requerido'
+  required: (value: string) => !!value || 'Este campo es requerido',
+  validDate: (value: string) => {
+    if (!value) return 'Este campo es requerido'
+    const date = new Date(value)
+    return !isNaN(date.getTime()) || 'Fecha inválida'
+  },
+  endTimeAfterStart: (endTime: string) => {
+    if (!endTime) return 'Este campo es requerido'
+    if (!formData.value.startTime) return 'Selecciona primero la fecha de inicio'
+    
+    const start = new Date(formData.value.startTime)
+    const end = new Date(endTime)
+    
+    if (end <= start) {
+      return 'La fecha de fin debe ser posterior a la fecha de inicio'
+    }
+    
+    return true
+  }
 }
 
 // Methods
 const loadReservations = async () => {
   await Promise.all([
-    reservationsStore.fetchReservations(reservationsStore.currentPage),
-    loadStats()
+    reservationsStore.fetchAll(),
+    loadStats(),
+    loadAvailableClasses(),
+    loadAvailableInstructors()
   ])
 }
 
+const loadAvailableClasses = async () => {
+  try {
+    const response = await api.get('/classes')
+    if (response.data.success) {
+      availableClasses.value = (response.data.data.classes || [])
+        .filter((cls: any) => cls.isActive)
+        .map((cls: any) => ({ id: cls.id, name: cls.name }))
+      console.log('✅ Available classes loaded:', availableClasses.value)
+    }
+  } catch (error) {
+    console.error('❌ Error loading available classes:', error)
+  }
+}
+
+const loadAvailableInstructors = async () => {
+  try {
+    const response = await api.get('/users/role/INSTRUCTOR')
+    if (response.data.success) {
+      availableInstructors.value = (response.data.data.users || [])
+        .filter((user: any) => user.isActive)
+        .map((user: any) => ({ id: user.id, name: user.name }))
+      console.log('✅ Available instructors loaded:', availableInstructors.value)
+    }
+  } catch (error) {
+    console.error('❌ Error loading available instructors:', error)
+  }
+}
+
 const loadStats = async () => {
-  const statsData = await reservationsStore.getReservationStats()
-  if (statsData) {
-    stats.value = statsData
+  try {
+    const statsData = await reservationsStore.getReservationStats()
+    if (statsData) {
+      stats.value = statsData
+      console.log('✅ Stats loaded from backend:', stats.value)
+    }
+  } catch (error) {
+    console.error('❌ Error loading stats from backend:', error)
+    // Fallback: calcular estadísticas localmente
+    const allReservations = reservationsStore.reservations
+    const total = allReservations.length
+    const pending = allReservations.filter(r => r.status === 'PENDING').length
+    const confirmed = allReservations.filter(r => r.status === 'CONFIRMED').length
+    const cancelled = allReservations.filter(r => r.status === 'CANCELLED').length
+    
+    stats.value = {
+      total,
+      pending,
+      confirmed,
+      cancelled,
+      today: 0,
+      thisWeek: 0,
+      thisMonth: 0
+    }
+    console.log('✅ Stats calculated locally as fallback:', stats.value)
   }
 }
 
@@ -526,7 +589,7 @@ const openCreateDialog = () => {
 const editReservation = (reservation: Reservation) => {
   isEditing.value = true
   selectedReservation.value = reservation
-  form.value = {
+  formData.value = {
     id: reservation.id,
     classId: reservation.classId,
     instructorId: reservation.instructorId,
@@ -545,6 +608,10 @@ const viewReservation = (reservation: Reservation) => {
 const confirmReservation = async (reservation: Reservation) => {
   try {
     await reservationsStore.confirmReservation(reservation.id)
+    
+    // Forzar re-render de la tabla
+    tableKey.value++
+    
     await loadReservations()
   } catch (error) {
     console.error('Error confirming reservation:', error)
@@ -554,6 +621,10 @@ const confirmReservation = async (reservation: Reservation) => {
 const cancelReservation = async (reservation: Reservation) => {
   try {
     await reservationsStore.cancelReservation(reservation.id)
+    
+    // Forzar re-render de la tabla
+    tableKey.value++
+    
     await loadReservations()
   } catch (error) {
     console.error('Error cancelling reservation:', error)
@@ -574,6 +645,10 @@ const confirmDelete = async () => {
     showDeleteDialog.value = false
     selectedReservation.value = null
     toast.show('Reserva eliminada exitosamente', 'success')
+    
+    // Forzar re-render de la tabla
+    tableKey.value++
+    
     await loadReservations()
   } catch (error) {
     console.error('Error deleting reservation:', error)
@@ -584,28 +659,35 @@ const saveReservation = async () => {
   if (!formValid.value) return
 
   try {
-    if (isEditing.value && form.value.id) {
+    if (isEditing.value && formData.value.id) {
       const updateData: UpdateReservationData = {
-        startTime: form.value.startTime,
-        endTime: form.value.endTime,
-        notes: form.value.notes
+        startTime: formData.value.startTime,
+        endTime: formData.value.endTime,
+        notes: formData.value.notes
       }
-      await reservationsStore.updateReservation(form.value.id, updateData)
+      await reservationsStore.updateReservation(formData.value.id, updateData)
+      toast.show('Reserva actualizada exitosamente', 'success')
     } else {
       const createData: CreateReservationData = {
-        classId: form.value.classId,
-        instructorId: form.value.instructorId,
-        startTime: form.value.startTime,
-        endTime: form.value.endTime,
-        notes: form.value.notes
+        classId: formData.value.classId,
+        instructorId: formData.value.instructorId,
+        startTime: formData.value.startTime,
+        endTime: formData.value.endTime,
+        notes: formData.value.notes
       }
       await reservationsStore.createReservation(createData)
+      toast.show('Reserva creada exitosamente', 'success')
     }
+    
+    // Forzar re-render de la tabla
+    tableKey.value++
     
     closeDialog()
     await loadReservations()
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error saving reservation:', error)
+    const errorMessage = error.response?.data?.message || 'Error al guardar la reserva'
+    toast.show(errorMessage, 'error')
   }
 }
 
@@ -615,7 +697,7 @@ const closeDialog = () => {
 }
 
 const resetForm = () => {
-  form.value = {
+  formData.value = {
     classId: '',
     instructorId: '',
     startTime: '',
@@ -623,6 +705,7 @@ const resetForm = () => {
     notes: ''
   }
   selectedReservation.value = null
+  formRef.value?.resetValidation?.()
 }
 
 // Lifecycle
