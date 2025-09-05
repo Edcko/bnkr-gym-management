@@ -5,6 +5,7 @@ import { useLanguage } from '@/stores/language'
 import { newsletterService } from '@/utils/api'
 import { t } from '@/utils/translations'
 
+
 const toast = useToast()
 const language = useLanguage()
 
@@ -149,9 +150,6 @@ const subscribe = async () => {
           <p class="mission-paragraph">
             {{ t('missionText2', language.currentLanguage) }}
           </p>
-          <p class="mission-paragraph">
-            {{ t('missionText3', language.currentLanguage) }}
-          </p>
         </div>
       </div>
     </section>
@@ -166,7 +164,7 @@ const subscribe = async () => {
         <div class="programs-grid">
           <div class="program-card">
             <div class="program-icon">
-              <v-icon size="48" color="white">mdi-dumbbell</v-icon>
+              <v-icon size="48" color="white">mdi-heart-pulse</v-icon>
             </div>
             <h3 class="program-title">{{ t('cardioBoxing', language.currentLanguage) }}</h3>
             <p class="program-description">
@@ -176,7 +174,7 @@ const subscribe = async () => {
           
           <div class="program-card">
             <div class="program-icon">
-              <v-icon size="48" color="white">mdi-account-group</v-icon>
+              <v-icon size="48" color="white">mdi-boxing-glove</v-icon>
             </div>
             <h3 class="program-title">{{ t('groupTraining', language.currentLanguage) }}</h3>
             <p class="program-description">
@@ -211,6 +209,8 @@ const subscribe = async () => {
   overflow-x: hidden;
 }
 
+
+
 /* Hero Section - Estilo Modest Muscle */
 .hero {
   position: relative;
@@ -218,7 +218,7 @@ const subscribe = async () => {
   min-height: 100vh;
   display: flex;
   align-items: center;
-  background: #1a1a1a;
+  background: var(--bg-primary);
   overflow: hidden;
 }
 
@@ -252,13 +252,14 @@ const subscribe = async () => {
   position: relative;
   z-index: 3;
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: 1fr auto;
   gap: 0;
   width: 100%;
   min-height: 100vh;
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 40px;
+  align-items: center;
 }
 
 .hero-left {
@@ -301,16 +302,30 @@ const subscribe = async () => {
 .hero-underline {
   width: 100px;
   height: 3px;
-  background: #ff6b35;
+  background: var(--accent-primary);
   margin-top: 20px;
 }
 
 .hero-right {
-  background: #ff6b35;
+  background: var(--form-bg);
+  backdrop-filter: blur(15px);
+  border: 1px solid var(--form-border);
+  box-shadow: 0 8px 32px var(--shadow-color);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 60px 40px;
+  border-radius: 20px;
+  margin: 40px;
+  width: 380px;
+  max-width: 90vw;
+  transition: all 0.3s ease;
+}
+
+.hero-right:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px var(--shadow-color);
+  border-color: var(--form-border);
 }
 
 .signup-form {
@@ -386,9 +401,9 @@ const subscribe = async () => {
 
 /* Mission Section */
 .mission {
-  background: #1a1a1a;
+  background: var(--bg-primary);
   padding: 120px 40px;
-  color: white;
+  color: var(--text-primary);
 }
 
 .mission-content {
@@ -400,7 +415,7 @@ const subscribe = async () => {
 .mission-title {
   font-size: 2.5rem;
   font-weight: 300;
-  color: white;
+  color: var(--text-primary);
   margin-bottom: 20px;
   letter-spacing: -0.02em;
 }
@@ -408,14 +423,14 @@ const subscribe = async () => {
 .mission-subtitle {
   font-size: 1.5rem;
   font-weight: 400;
-  color: #ff6b35;
+  color: var(--text-accent);
   margin-bottom: 40px;
   font-style: italic;
 }
 
 .mission-paragraph {
   font-size: 1.1rem;
-  color: #cccccc;
+  color: var(--text-secondary);
   line-height: 1.8;
   margin-bottom: 25px;
   font-weight: 300;
@@ -423,9 +438,9 @@ const subscribe = async () => {
 
 /* Programs Section */
 .programs {
-  background: #2d2d2d;
+  background: var(--bg-secondary);
   padding: 120px 40px;
-  color: white;
+  color: var(--text-primary);
 }
 
 .programs-content {
@@ -437,23 +452,30 @@ const subscribe = async () => {
 .section-title {
   font-size: 3rem;
   font-weight: 300;
-  color: white;
+  color: var(--text-primary);
   margin-bottom: 20px;
   letter-spacing: -0.02em;
 }
 
 .section-subtitle {
   font-size: 1.3rem;
-  color: #ff6b35;
-  margin-bottom: 10px;
+  color: var(--text-accent);
+  margin-bottom: 20px;
   font-style: italic;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .testimonial-author {
   font-size: 1rem;
-  color: #cccccc;
+  color: var(--text-secondary);
   margin-bottom: 60px;
   font-weight: 300;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
 }
 
 .programs-grid {
@@ -464,15 +486,36 @@ const subscribe = async () => {
 }
 
 .program-card {
-  background: #1a1a1a;
+  background: var(--bg-tertiary);
   padding: 40px 30px;
-  border-radius: 8px;
+  border-radius: 12px;
   text-align: center;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.program-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ff6b35, #dc143c);
+  transform: scaleX(0);
   transition: transform 0.3s ease;
+}
+
+.program-card:hover::before {
+  transform: scaleX(1);
 }
 
 .program-card:hover {
   transform: translateY(-5px);
+  border-color: rgba(255, 107, 53, 0.3);
+  box-shadow: 0 10px 30px rgba(255, 107, 53, 0.1);
 }
 
 .program-icon {
@@ -482,7 +525,7 @@ const subscribe = async () => {
 .program-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: white;
+  color: var(--text-primary);
   margin-bottom: 15px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -490,7 +533,7 @@ const subscribe = async () => {
 
 .program-description {
   font-size: 1rem;
-  color: #cccccc;
+  color: var(--text-secondary);
   line-height: 1.6;
   font-weight: 300;
 }
@@ -506,6 +549,8 @@ const subscribe = async () => {
   height: 56px;
   padding: 0 40px;
   border-radius: 4px;
+  background: var(--accent-primary) !important;
+  color: white !important;
 }
 
 /* Responsive */

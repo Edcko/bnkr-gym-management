@@ -5,6 +5,7 @@ import { useAuth } from '@/stores/auth'
 import { t } from '@/utils/translations'
 import { onMounted } from 'vue'
 import { useThemeStore } from '@/stores/theme'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const language = useLanguage()
 const auth = useAuth()
@@ -79,6 +80,9 @@ onMounted(() => {
           <span class="language-text">{{ language.currentLanguage.toUpperCase() }}</span>
         </v-btn>
         
+        <!-- Theme Toggle -->
+        <ThemeToggle />
+        
         <!-- Botón de login/register o logout -->
         <template v-if="!auth.isAuthenticated">
           <v-btn 
@@ -133,16 +137,25 @@ onMounted(() => {
         
         <div class="footer-section">
           <h4 class="footer-subtitle">{{ t('contact', language.currentLanguage) }}</h4>
-          <p class="footer-text">+1 (555) 123-4567</p>
-          <p class="footer-text">info@bnkrgym.com</p>
-          <p class="footer-text">123 Fitness Street, Gym City</p>
+          <div class="contact-info">
+            <div class="contact-item">
+              <h5 class="contact-name">BNKR BOCA</h5>
+              <p class="footer-text">+52 229 211 9924</p>
+              <p class="footer-text">Av Progreso 579, Plaza San Ángel, Jardines de Mocambo, 94299 Veracruz, Ver.</p>
+            </div>
+            <div class="contact-item">
+              <h5 class="contact-name">BNKR ORIZ</h5>
+              <p class="footer-text">+52 272 201 2222</p>
+              <p class="footer-text">Norte 26 No. 925 Col. El edén, 94324 Orizaba, Veracruz</p>
+            </div>
+          </div>
         </div>
         
         <div class="footer-section">
           <h4 class="footer-subtitle">{{ t('schedules', language.currentLanguage) }}</h4>
-          <p class="footer-text">{{ t('monFri', language.currentLanguage) }}</p>
-          <p class="footer-text">{{ t('satSun', language.currentLanguage) }}</p>
-          <p class="footer-text">{{ t('specialClasses', language.currentLanguage) }}</p>
+          <p class="footer-text">Lun-Vie: 6:00 AM - 10:00 PM</p>
+          <p class="footer-text">Sáb-Dom: 7:00 AM - 8:00 PM</p>
+          <p class="footer-text">Clases especiales: 24/7</p>
         </div>
       </div>
       
@@ -346,6 +359,29 @@ body {
   color: #999999;
   font-size: 0.9rem;
   font-weight: 300;
+}
+
+/* Estilos para la información de contacto */
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.contact-item {
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid #333333;
+}
+
+.contact-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ff6b35;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Responsive navbar */

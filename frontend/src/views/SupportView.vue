@@ -14,7 +14,7 @@
             <v-icon size="48" color="#4CAF50" class="contact-icon">mdi-chat</v-icon>
             <h3 class="contact-title">Chat en Vivo</h3>
             <p class="contact-description">Habla con nuestro equipo en tiempo real</p>
-            <v-chip color="success" size="small">Disponible</v-chip>
+                            <v-chip :color="$vuetify.theme.current.dark ? 'white' : 'success'" size="small">Disponible</v-chip>
           </v-card-text>
         </v-card>
 
@@ -23,7 +23,7 @@
             <v-icon size="48" color="#2196F3" class="contact-icon">mdi-email</v-icon>
             <h3 class="contact-title">Email</h3>
             <p class="contact-description">Envíanos un mensaje detallado</p>
-            <v-chip color="info" size="small">Respuesta en 24h</v-chip>
+                            <v-chip :color="$vuetify.theme.current.dark ? 'white' : 'info'" size="small">Respuesta en 24h</v-chip>
           </v-card-text>
         </v-card>
 
@@ -32,7 +32,7 @@
             <v-icon size="48" color="#FF9800" class="contact-icon">mdi-phone</v-icon>
             <h3 class="contact-title">Teléfono</h3>
             <p class="contact-description">Llámanos directamente</p>
-            <v-chip color="warning" size="small">Lun-Vie 8AM-8PM</v-chip>
+                            <v-chip :color="$vuetify.theme.current.dark ? 'white' : 'warning'" size="small">Lun-Vie 8AM-8PM</v-chip>
           </v-card-text>
         </v-card>
 
@@ -41,7 +41,7 @@
             <v-icon size="48" color="#25D366" class="contact-icon">mdi-whatsapp</v-icon>
             <h3 class="contact-title">WhatsApp</h3>
             <p class="contact-description">Mensaje rápido por WhatsApp</p>
-            <v-chip color="success" size="small">Respuesta rápida</v-chip>
+                            <v-chip :color="$vuetify.theme.current.dark ? 'white' : 'success'" size="small">Respuesta rápida</v-chip>
           </v-card-text>
         </v-card>
       </div>
@@ -52,28 +52,28 @@
         <v-card-text>
           <div class="contact-info-grid">
             <div class="contact-info-item">
-              <v-icon color="primary" size="24">mdi-map-marker</v-icon>
+                              <v-icon :color="$vuetify.theme.current.dark ? 'white' : 'primary'" size="24">mdi-map-marker</v-icon>
               <div class="contact-info-content">
                 <h4>Dirección</h4>
                 <p>Av. Principal 123, Ciudad<br>Zona Centro, CP 12345</p>
               </div>
             </div>
             <div class="contact-info-item">
-              <v-icon color="primary" size="24">mdi-phone</v-icon>
+                              <v-icon :color="$vuetify.theme.current.dark ? 'white' : 'primary'" size="24">mdi-phone</v-icon>
               <div class="contact-info-content">
                 <h4>Teléfono</h4>
                 <p>+52 (55) 1234-5678<br>+52 (55) 1234-5679</p>
               </div>
             </div>
             <div class="contact-info-item">
-              <v-icon color="primary" size="24">mdi-email</v-icon>
+                              <v-icon :color="$vuetify.theme.current.dark ? 'white' : 'primary'" size="24">mdi-email</v-icon>
               <div class="contact-info-content">
                 <h4>Email</h4>
                 <p>soporte@bnkrgym.com<br>info@bnkrgym.com</p>
               </div>
             </div>
             <div class="contact-info-item">
-              <v-icon color="primary" size="24">mdi-clock</v-icon>
+                              <v-icon :color="$vuetify.theme.current.dark ? 'white' : 'primary'" size="24">mdi-clock</v-icon>
               <div class="contact-info-content">
                 <h4>Horarios</h4>
                 <p>Lunes a Viernes: 8:00 AM - 8:00 PM<br>Sábados: 9:00 AM - 6:00 PM</p>
@@ -156,7 +156,7 @@
             <div class="form-actions">
               <v-btn
                 type="submit"
-                color="primary"
+                :color="$vuetify.theme.current.dark ? 'white' : 'primary'"
                 size="large"
                 :loading="submitting"
                 class="submit-btn"
@@ -173,7 +173,7 @@
         <v-card class="chat-dialog">
           <v-card-title class="chat-header">
             <div class="chat-title">
-              <v-icon color="success" size="20">mdi-circle</v-icon>
+              <v-icon :color="$vuetify.theme.current.dark ? 'white' : 'success'" size="20">mdi-circle</v-icon>
               <span>Chat en Vivo</span>
             </div>
             <v-btn icon @click="showChat = false">
@@ -206,7 +206,7 @@
               ></v-text-field>
               <v-btn 
                 icon 
-                color="primary" 
+                :color="$vuetify.theme.current.dark ? 'white' : 'primary'" 
                 @click="sendMessage"
                 :disabled="!newMessage.trim()"
               >

@@ -42,9 +42,9 @@
               ></v-text-field>
             </div>
             <div class="filter-group">
-              <v-btn color="primary" @click="applyFilters">
-                Aplicar Filtros
-              </v-btn>
+                          <v-btn :color="$vuetify.theme.current.dark ? 'white' : 'primary'" @click="applyFilters">
+              Aplicar Filtros
+            </v-btn>
             </div>
           </div>
         </v-card-text>
@@ -103,7 +103,7 @@
 
       <!-- Tabs de contenido -->
       <v-card class="content-card" elevation="2">
-        <v-tabs v-model="activeTab" color="primary">
+        <v-tabs v-model="activeTab" :color="$vuetify.theme.current.dark ? 'white' : 'primary'">
           <v-tab value="classes">Clases</v-tab>
           <v-tab value="reservations">Reservas</v-tab>
           <v-tab value="payments">Pagos</v-tab>

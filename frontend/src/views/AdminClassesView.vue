@@ -1,6 +1,9 @@
 <template>
   <div class="admin-classes">
     <v-container fluid>
+      <!-- Breadcrumbs de navegación -->
+      <AdminBreadcrumbs current-module="Gestión de Clases" />
+      
       <!-- Header -->
       <v-row>
         <v-col cols="12">
@@ -411,6 +414,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useToast } from '@/stores/toast'
 import { useClassesStore } from '@/stores/classes'
 import { api } from '@/utils/api'
+import AdminBreadcrumbs from '@/components/AdminBreadcrumbs.vue'
 
 const toast = useToast()
 const classesStore = useClassesStore()

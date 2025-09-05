@@ -1,6 +1,9 @@
 <template>
   <div class="admin-payments">
     <v-container fluid>
+      <!-- Breadcrumbs de navegación -->
+      <AdminBreadcrumbs current-module="Gestión de Pagos" />
+      
       <!-- Header -->
       <v-row>
         <v-col cols="12">
@@ -377,6 +380,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePaymentsStore, type Payment, type CreatePaymentData, type UpdatePaymentData } from '@/stores/payments'
 import { useToast } from '@/stores/toast'
+import AdminBreadcrumbs from '@/components/AdminBreadcrumbs.vue'
 
 const paymentsStore = usePaymentsStore()
 const toast = useToast()

@@ -7,10 +7,10 @@ export const translations = {
     joinMovement: 'ÚNETE AL MOVIMIENTO',
     
     // Hero Section
-    revealingExcellence: 'REVELANDO EXCELENCIA. DESTACANDO CARÁCTER.',
+    revealingExcellence: 'MUSICA BOXEO CARDIO & FUNCIONAL',
     joinTheMovement: 'ÚNETE AL MOVIMIENTO',
     getStartedToday: 'COMIENZA HOY',
-    joinNewsletter: 'ÚNETE A #BNKRMOVEMENT',
+    joinNewsletter: 'ÚNETE A #TuLugarSeguro',
     newsletterSubtitle: 'Sé el primero en conocer ofertas, eventos y recursos gratuitos de fitness',
     firstName: 'NOMBRE',
     lastName: 'APELLIDO',
@@ -19,20 +19,20 @@ export const translations = {
     
     // Mission Section
     ourMission: 'NUESTRA MISIÓN',
-    missionSubtitle: 'Revelando Excelencia. Destacando Carácter.',
-    missionText1: 'Aquí en BNKR, creemos que la verdadera fuerza viene desde adentro. En un mundo que a menudo prioriza la apariencia sobre la sustancia, estamos aquí para celebrar a aquellos que dejan que su dedicación, disciplina y carácter hablen más fuerte que su físico.',
-    missionText2: 'Creemos que el Cardio-Boxing es más que solo un entrenamiento – es un viaje de autodescubrimiento y transformación. Cada golpe, cada gota de sudor, cada momento de seguir adelante cuando quieres rendirte, construye no solo tu cuerpo, sino tu carácter.',
-    missionText3: 'El carácter no se construye en zonas de confort. Se forja en el fuego del desafío, en los momentos cuando eliges presentarte incluso cuando es difícil. En BNKR, no solo estamos construyendo cuerpos más fuertes – estamos construyendo personas más fuertes.',
+    missionSubtitle: 'Transformando Vidas a Través del Cardio Box',
+    missionText1: 'En BNKR transformamos vidas a través del Cardio Box, ofreciendo entrenamientos personalizados en grupos reducidos que fusionan técnica, motivación y comunidad.',
+    missionText2: 'Creamos un espacio seguro, dinámico y motivador, donde tanto adultos como niños encuentran la oportunidad de superar sus límites, fortalecer su confianza y disfrutar de una experiencia que impulsa su bienestar físico y emocional cada día.',
+    missionText3: '',
     
     // Programs Section
-    getTrainingResults: 'OBTÉN ENTRENAMIENTO. OBTÉN RESULTADOS.',
-    testimonial: '"Nunca supe que podría ver resultados en unas pocas semanas…esto nunca me había pasado antes."',
-    testimonialAuthor: '– Cliente BNKR',
-    cardioBoxing: 'CARDIO BOXING',
-    cardioBoxingDesc: 'Sesiones intensivas de cardio boxing diseñadas para quemar calorías, construir resistencia y esculpir tu cuerpo mientras aprendes técnicas de boxeo apropiadas.',
-    groupTraining: 'ENTRENAMIENTO GRUPAL',
-    groupTrainingDesc: 'Únete a nuestra comunidad de individuos motivados. Entrena juntos, empújense mutuamente y logren sus objetivos de fitness en un ambiente de apoyo.',
-    personalTraining: 'ENTRENAMIENTO PERSONAL',
+    getTrainingResults: 'Clases',
+    testimonial: 'La clase de Cardio Box es la experiencia insignia de BNKR.',
+    testimonialAuthor: 'Está diseñada para combinar la energía del boxeo con la intensidad del entrenamiento funcional y el ritmo de la música.',
+    cardioBoxing: 'Cardio Box en BNKR',
+    cardioBoxingDesc: 'Objetivo: mejorar la condición física, quemar calorías, liberar estrés y, sobre todo, crear una hora que cambia el estado de ánimo y mejora el día.',
+    groupTraining: 'Box Studio en BNKR',
+    groupTrainingDesc: 'La clase de Box Studio está enfocada en el aprendizaje técnico del boxeo. A diferencia del Cardio Box, aquí no se busca solo quemar calorías, sino aprender y perfeccionar la técnica boxística. Objetivo: desarrollar habilidades reales de boxeo: defensa, golpeo, desplazamiento y coordinación.',
+    personalTraining: 'Entrenamiento Personalizado',
     personalTrainingDesc: 'Sesiones uno a uno con nuestros entrenadores expertos. Obtén atención personalizada, planes de entrenamiento personalizados y resultados acelerados.',
     getStarted: 'COMIENZA',
     
@@ -71,10 +71,10 @@ export const translations = {
     joinMovement: 'JOIN THE MOVEMENT',
     
     // Hero Section
-    revealingExcellence: 'REVEALING EXCELLENCE. HIGHLIGHTING CHARACTER.',
+    revealingExcellence: 'MUSIC BOXING & FUNTIONAL CARDIO',
     joinTheMovement: 'JOIN THE MOVEMENT',
     getStartedToday: 'GET STARTED TODAY',
-    joinNewsletter: 'JOIN THE #BNKRMOVEMENT',
+    joinNewsletter: 'JOIN #TuLugarSeguro',
     newsletterSubtitle: 'Be the first to hear about deals, events, & free fitness resources',
     firstName: 'FIRST NAME',
     lastName: 'LAST NAME',
@@ -83,20 +83,20 @@ export const translations = {
     
     // Mission Section
     ourMission: 'OUR MISSION',
-    missionSubtitle: 'Revealing Excellence. Highlighting Character.',
-    missionText1: 'Here at BNKR, we believe that true strength comes from within. In a world that often prioritizes appearance over substance, we\'re here to celebrate those who let their dedication, discipline, and character speak louder than their physique.',
-    missionText2: 'We believe that Cardio-Boxing is more than just a workout – it\'s a journey of self-discovery and transformation. Every punch, every drop of sweat, every moment of pushing through when you want to quit, builds not just your body, but your character.',
-    missionText3: 'Character isn\'t built in comfort zones. It\'s forged in the fire of challenge, in the moments when you choose to show up even when it\'s hard. At BNKR, we\'re not just building stronger bodies – we\'re building stronger people.',
+    missionSubtitle: 'Transforming Lives Through Cardio Box',
+    missionText1: 'At BNKR, we transform lives through Cardio Box, offering personalized training in small groups that combine technique, motivation, and community.',
+    missionText2: 'We create a safe, dynamic, and empowering environment, where both adults and children can push their limits, build confidence, and enjoy an experience that enhances their physical and emotional well-being every day.',
+    missionText3: '',
     
     // Programs Section
-    getTrainingResults: 'GET TRAINING. GET RESULTS.',
-    testimonial: '"I never knew I could see results in a few weeks…like this never happened to me before."',
-    testimonialAuthor: '– BNKR Client',
-    cardioBoxing: 'CARDIO BOXING',
-    cardioBoxingDesc: 'High-intensity cardio boxing sessions designed to burn calories, build endurance, and sculpt your body while learning proper boxing techniques.',
-    groupTraining: 'GROUP TRAINING',
-    groupTrainingDesc: 'Join our community of motivated individuals. Train together, push each other, and achieve your fitness goals in a supportive environment.',
-    personalTraining: 'PERSONAL TRAINING',
+    getTrainingResults: 'Classes',
+    testimonial: 'The Cardio Box class is BNKR\'s signature experience.',
+    testimonialAuthor: 'It is designed to combine the energy of boxing with the intensity of functional training and the rhythm of music.',
+    cardioBoxing: 'Cardio Box at BNKR',
+    cardioBoxingDesc: 'Objective: improve physical condition, burn calories, release stress, and above all, create an hour that changes mood and improves the day.',
+    groupTraining: 'Box Studio at BNKR',
+    groupTrainingDesc: 'The Box Studio class is focused on the technical learning of boxing. Unlike Cardio Box, here the goal is not just to burn calories, but to learn and perfect boxing technique. Objective: develop real boxing skills: defense, striking, movement and coordination.',
+    personalTraining: 'Personal Training',
     personalTrainingDesc: 'One-on-one sessions with our expert trainers. Get personalized attention, custom workout plans, and accelerated results.',
     getStarted: 'GET STARTED',
     

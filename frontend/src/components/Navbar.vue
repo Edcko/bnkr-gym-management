@@ -1,19 +1,24 @@
 <template>
   <v-app-bar
     app
-    color="white"
-    elevation="1"
-    class="navbar-clean"
+    :color="$vuetify.theme.current.dark ? 'rgba(26, 26, 26, 0.9)' : 'rgba(255, 255, 255, 0.9)'"
+    elevation="0"
+    class="navbar-transparent"
   >
     <!-- Logo BNKR -->
     <v-app-bar-nav-icon
       @click="toggleDrawer"
       class="d-md-none"
-      color="black"
+      :color="$vuetify.theme.current.dark ? 'white' : 'black'"
     ></v-app-bar-nav-icon>
 
-    <v-app-bar-title class="d-flex align-center">
-      <h2 class="text-h4 font-weight-bold text-black">BNKR</h2>
+    <v-app-bar-title class="d-flex align-center logo-container" @click="$router.push({ name: 'home' })">
+      <img 
+        src="../assets/BNKR-logo.png" 
+        alt="BNKR Logo" 
+        class="logo-image"
+        height="40"
+      />
     </v-app-bar-title>
 
     <v-spacer></v-spacer>
@@ -26,29 +31,32 @@
         :to="item.to"
         variant="text"
         class="nav-btn mx-3"
-        color="black"
-        hover-color="grey-600"
+        :color="$vuetify.theme.current.dark ? 'white' : 'black'"
+        :hover-color="$vuetify.theme.current.dark ? 'grey-300' : 'grey-600'"
       >
         {{ item.title }}
       </v-btn>
     </div>
 
+    <!-- Theme Toggle -->
+    <ThemeToggle class="mr-4" />
+    
     <!-- Botones de autenticación -->
     <div v-if="!isAuthenticated" class="d-none d-md-flex auth-buttons">
       <v-btn
         :to="{ name: 'login' }"
         variant="text"
         class="mr-4 auth-btn"
-        color="black"
+        :color="$vuetify.theme.current.dark ? 'white' : 'black'"
       >
         Iniciar Sesión
       </v-btn>
       <v-btn
         :to="{ name: 'register' }"
-        color="black"
+        :color="$vuetify.theme.current.dark ? 'white' : 'black'"
         variant="outlined"
         class="auth-btn"
-        style="border-color: black;"
+        :style="{ borderColor: $vuetify.theme.current.dark ? 'white' : 'black' }"
       >
         Registrarse
       </v-btn>
@@ -111,6 +119,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTheme } from 'vuetify'
 import { useAuth } from '@/stores/auth'
+import ThemeToggle from './ThemeToggle.vue'
 
 const router = useRouter()
 const theme = useTheme()
@@ -217,18 +226,35 @@ const logout = async () => {
 /* Importar fuentes */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Condensed:wght@300;400;700&display=swap');
 
-.navbar-modern {
-  background: linear-gradient(135deg, #000000 0%, #1A1A1A 100%) !important;
-  border-bottom: 2px solid #FF5722;
+.navbar-transparent {
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(220, 20, 60, 0.2);
+  transition: all 0.3s ease;
+}
+
+.navbar-transparent:hover {
+  border-bottom-color: rgba(220, 20, 60, 0.4);
 }
 
 .logo-container {
   cursor: pointer;
   transition: transform 0.3s ease;
+  padding: 8px;
+  border-radius: 8px;
 }
 
 .logo-container:hover {
   transform: scale(1.05);
+  background: rgba(220, 20, 60, 0.1);
+}
+
+.logo-image {
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.logo-container:hover .logo-image {
+  filter: drop-shadow(0 4px 8px rgba(220, 20, 60, 0.3));
 }
 
 .logo-icon {
@@ -343,7 +369,8 @@ const logout = async () => {
 
 /* Drawer moderno */
 .v-navigation-drawer {
-  background: linear-gradient(135deg, #000000 0%, #1A1A1A 100%) !important;
+  background: rgba(26, 26, 26, 0.95) !important;
+  backdrop-filter: blur(10px);
 }
 
 .v-list-item {

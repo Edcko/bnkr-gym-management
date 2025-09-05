@@ -1,6 +1,6 @@
 /* ===== VARIABLES DE TEMA BNKR ===== */
 
-/* Modo Oscuro (por defecto) */
+/* Dark Theme (Default) */
 :root {
   /* Colores principales */
   --bnkr-primary: #ff4444;
@@ -8,9 +8,9 @@
   --bnkr-primary-light: #ff6666;
   
   /* Colores de fondo */
-  --bg-primary: #0a0a0a;
-  --bg-secondary: #1a1a1a;
-  --bg-tertiary: #2a2a2a;
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #1a1a1a;
   --bg-card: rgba(255, 255, 255, 0.95);
   --bg-overlay: rgba(0, 0, 0, 0.9);
   
@@ -19,11 +19,15 @@
   --text-secondary: #cccccc;
   --text-tertiary: #999999;
   --text-muted: #666666;
+  --text-accent: #dc143c;
+  --accent-primary: #dc143c;
+  --accent-secondary: #8b0000;
   
   /* Colores de borde */
   --border-primary: rgba(255, 68, 68, 0.2);
   --border-secondary: rgba(255, 255, 255, 0.1);
   --border-muted: #333333;
+  --border-color: rgba(255, 255, 255, 0.2);
   
   /* Colores de estado */
   --success: #4caf50;
@@ -35,6 +39,7 @@
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 8px 25px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.3);
+  --shadow-color: rgba(0, 0, 0, 0.3);
   
   /* Efectos */
   --blur: blur(20px);
@@ -42,7 +47,7 @@
   --gradient-bg: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
 }
 
-/* Modo Claro */
+/* Light Theme */
 :root.light {
   /* Colores principales (mantienen identidad BNKR) */
   --bnkr-primary: #ff4444;
@@ -52,20 +57,24 @@
   /* Colores de fondo (invertidos) */
   --bg-primary: #ffffff;
   --bg-secondary: #f8f9fa;
-  --bg-tertiary: #e9ecef;
+  --bg-tertiary: #ffffff;
   --bg-card: rgba(255, 255, 255, 0.98);
   --bg-overlay: rgba(255, 255, 255, 0.95);
   
   /* Colores de texto (invertidos) */
   --text-primary: #1a1a1a;
-  --text-secondary: #333333;
+  --text-secondary: #6c757d;
   --text-tertiary: #666666;
   --text-muted: #999999;
+  --text-accent: #dc143c;
+  --accent-primary: #dc143c;
+  --accent-secondary: #8b0000;
   
   /* Colores de borde */
   --border-primary: rgba(255, 68, 68, 0.3);
   --border-secondary: rgba(0, 0, 0, 0.1);
   --border-muted: #dee2e6;
+  --border-color: rgba(220, 20, 60, 0.2);
   
   /* Colores de estado (mantienen) */
   --success: #4caf50;
@@ -77,6 +86,7 @@
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 8px 25px rgba(0, 0, 0, 0.15);
   --shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.1);
+  --shadow-color: rgba(0, 0, 0, 0.1);
   
   /* Efectos */
   --blur: blur(20px);
@@ -84,9 +94,9 @@
   --gradient-bg: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
 }
 
-/* Transiciones suaves para cambios de tema */
+/* Transiciones suaves para cambio de tema */
 * {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 /* Aplicar variables a elementos específicos */
@@ -105,11 +115,15 @@ body {
 .text-secondary { color: var(--text-secondary); }
 .text-tertiary { color: var(--text-tertiary); }
 .text-muted { color: var(--text-muted); }
+.text-accent { color: var(--text-accent); }
 
 .border-primary { border-color: var(--border-primary); }
 .border-secondary { border-color: var(--border-secondary); }
 .border-muted { border-color: var(--border-muted); }
+.border-color { border-color: var(--border-color); }
 
 .shadow-sm { box-shadow: var(--shadow-sm); }
 .shadow-md { box-shadow: var(--shadow-md); }
 .shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-color { box-shadow: var(--shadow-color); }
+

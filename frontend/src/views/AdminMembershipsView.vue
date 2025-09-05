@@ -1,6 +1,9 @@
 <template>
   <div class="admin-memberships">
     <v-container fluid>
+      <!-- Breadcrumbs de navegación -->
+      <AdminBreadcrumbs current-module="Gestión de Membresías" />
+      
       <!-- Header -->
       <v-row>
         <v-col cols="12">
@@ -535,6 +538,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useMembershipsStore, type Membership, type CreateMembershipData, type UpdateMembershipData } from '@/stores/memberships'
 import { useToast } from '@/stores/toast'
 import { api } from '@/utils/api'
+import AdminBreadcrumbs from '@/components/AdminBreadcrumbs.vue'
 
 const membershipsStore = useMembershipsStore()
 const toast = useToast()

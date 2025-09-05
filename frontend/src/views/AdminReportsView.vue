@@ -1,5 +1,8 @@
 <template>
   <v-container fluid>
+    <!-- Breadcrumbs de navegación -->
+    <AdminBreadcrumbs current-module="Reportes y Analytics" />
+    
     <v-row>
       <v-col cols="12">
         <h1 class="text-h4 mb-4">📊 Reportes y Analytics</h1>
@@ -67,7 +70,7 @@
               
               <v-col cols="12" md="3" class="text-right">
                 <v-btn
-                  color="primary"
+                  :color="$vuetify.theme.current.dark ? 'white' : 'primary'"
                   prepend-icon="mdi-refresh"
                   @click="generateReports"
                   :loading="generatingReports"
@@ -83,7 +86,7 @@
         <v-row class="mb-6">
           <v-col cols="12" md="3">
             <v-card class="pa-4 text-center">
-              <v-icon size="48" color="primary" class="mb-3">mdi-currency-usd</v-icon>
+              <v-icon size="48" :color="$vuetify.theme.current.dark ? 'white' : 'primary'" class="mb-3">mdi-currency-usd</v-icon>
               <h3 class="text-h5">${{ formatNumber(reportsStore.overviewReport?.revenue?.total || 0) }}</h3>
               <p class="text-body-2">Ingresos Totales</p>
               <v-chip
@@ -98,7 +101,7 @@
           
           <v-col cols="12" md="3">
             <v-card class="pa-4 text-center">
-              <v-icon size="48" color="success" class="mb-3">mdi-account-group</v-icon>
+              <v-icon size="48" :color="$vuetify.theme.current.dark ? 'white' : 'success'" class="mb-3">mdi-account-group</v-icon>
               <h3 class="text-h5">{{ reportsStore.overviewReport?.memberships?.total || 0 }}</h3>
               <p class="text-body-2">Miembros Activos</p>
               <v-chip
@@ -113,7 +116,7 @@
           
           <v-col cols="12" md="3">
             <v-card class="pa-4 text-center">
-              <v-icon size="48" color="warning" class="mb-3">mdi-calendar-check</v-icon>
+              <v-icon size="48" :color="$vuetify.theme.current.dark ? 'white' : 'warning'" class="mb-3">mdi-calendar-check</v-icon>
               <h3 class="text-h5">{{ reportsStore.overviewReport?.classes?.total || 0 }}</h3>
               <p class="text-body-2">Clases Realizadas</p>
               <v-chip
@@ -128,7 +131,7 @@
           
           <v-col cols="12" md="3">
             <v-card class="pa-4 text-center">
-              <v-icon size="48" color="info" class="mb-3">mdi-clock</v-icon>
+              <v-icon size="48" :color="$vuetify.theme.current.dark ? 'white' : 'info'" class="mb-3">mdi-clock</v-icon>
               <h3 class="text-h5">{{ reportsStore.overviewReport?.reservations?.today || 0 }}</h3>
               <p class="text-body-2">Reservas Hoy</p>
               <v-chip
@@ -175,7 +178,7 @@
                     :key="classItem.id"
                   >
                     <template v-slot:prepend>
-                      <v-avatar size="32" color="primary">
+                      <v-avatar size="32" :color="$vuetify.theme.current.dark ? 'white' : 'primary'">
                         <span class="text-white">{{ index + 1 }}</span>
                       </v-avatar>
                     </template>
@@ -199,7 +202,7 @@
                     :key="product.id"
                   >
                     <template v-slot:prepend>
-                      <v-avatar size="32" color="success">
+                      <v-avatar size="32" :color="$vuetify.theme.current.dark ? 'white' : 'success'">
                         <span class="text-white">{{ index + 1 }}</span>
                       </v-avatar>
                     </template>
@@ -223,7 +226,7 @@
                 <v-row>
                   <v-col cols="12" md="3">
                     <v-btn
-                      color="success"
+                      :color="$vuetify.theme.current.dark ? 'white' : 'success'"
                       block
                       prepend-icon="mdi-file-excel"
                       @click="exportToExcel"
@@ -235,7 +238,7 @@
                   
                   <v-col cols="12" md="3">
                     <v-btn
-                      color="error"
+                      :color="$vuetify.theme.current.dark ? 'white' : 'error'"
                       block
                       prepend-icon="mdi-file-pdf-box"
                       @click="exportToPDF"
@@ -247,7 +250,7 @@
                   
                   <v-col cols="12" md="3">
                     <v-btn
-                      color="info"
+                      :color="$vuetify.theme.current.dark ? 'white' : 'info'"
                       block
                       prepend-icon="mdi-chart-line"
                       @click="exportToCSV"
@@ -259,7 +262,7 @@
                   
                   <v-col cols="12" md="3">
                     <v-btn
-                      color="warning"
+                      :color="$vuetify.theme.current.dark ? 'white' : 'warning'"
                       block
                       prepend-icon="mdi-email"
                       @click="sendReportEmail"
@@ -285,6 +288,7 @@ import { useReportsStore } from '@/stores/reports'
 import Chart from 'chart.js/auto'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import AdminBreadcrumbs from '@/components/AdminBreadcrumbs.vue'
 
 // Stores
 const toast = useToast()

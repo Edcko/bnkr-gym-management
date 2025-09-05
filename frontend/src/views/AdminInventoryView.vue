@@ -1,5 +1,8 @@
 <template>
   <v-container fluid>
+    <!-- Breadcrumbs de navegación -->
+    <AdminBreadcrumbs current-module="Gestión de Inventario" />
+    
     <v-row>
       <v-col cols="12">
         <h1 class="text-h4 mb-4">📦 Gestión de Inventario</h1>
@@ -338,6 +341,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useInventoryStore } from '@/stores/inventory'
 import { useToast } from '@/stores/toast'
+import AdminBreadcrumbs from '@/components/AdminBreadcrumbs.vue'
 
 // Stores
 const inventoryStore = useInventoryStore()

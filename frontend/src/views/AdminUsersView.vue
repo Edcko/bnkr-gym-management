@@ -1,5 +1,8 @@
 <template>
   <v-container fluid>
+    <!-- Breadcrumbs de navegación -->
+    <AdminBreadcrumbs current-module="Gestión de Usuarios" />
+    
     <v-row>
       <v-col cols="12">
         <h1 class="text-h4 mb-4">👥 Gestión de Usuarios</h1>
@@ -121,6 +124,11 @@
               >
                 {{ getRoleLabel(item.role) }}
               </v-chip>
+            </template>
+
+            <!-- Columna de fecha de registro -->
+            <template v-slot:item.createdAt="{ item }">
+              {{ formatDate(item.createdAt) }}
             </template>
 
             <!-- Columna de acciones -->
@@ -312,6 +320,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from '@/stores/toast'
 import { useUsersStore, type User, type CreateUserData, type UpdateUserData } from '@/stores/users'
+import { formatDate } from '@/utils/dateFormat'
+import AdminBreadcrumbs from '@/components/AdminBreadcrumbs.vue'
 
 // Store
 const toast = useToast()

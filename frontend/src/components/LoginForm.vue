@@ -240,7 +240,7 @@ const clearError = (field: string) => {
 const handleFormSubmit = async (values: any) => {
   try {
     isLoading.value = true
-    
+
     console.log('🔐 Attempting login with:', { email: values.email, password: '***' })
 
     const result = await authStore.login({

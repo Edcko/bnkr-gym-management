@@ -54,13 +54,13 @@
               </div>
             </div>
             <div class="status-actions">
-              <v-btn color="primary" variant="outlined" @click="showRenewalDialog = true">
+              <v-btn :color="$vuetify.theme.current.dark ? 'white' : 'primary'" variant="outlined" @click="showRenewalDialog = true">
                 Renovar Membresía
               </v-btn>
               <v-btn color="secondary" variant="outlined" @click="showUpgradeDialog = true">
                 Cambiar Plan
               </v-btn>
-              <v-btn color="error" variant="outlined" @click="showCancelDialog = true">
+              <v-btn :color="$vuetify.theme.current.dark ? 'white' : 'error'" variant="outlined" @click="showCancelDialog = true">
                 Cancelar Membresía
               </v-btn>
             </div>
@@ -74,7 +74,7 @@
           <v-icon size="64" color="grey" class="mb-4">mdi-account-off</v-icon>
           <h3 class="text-h5 mb-2">No tienes una membresía activa</h3>
           <p class="text-body-1 mb-4">Selecciona un plan para comenzar a disfrutar de nuestros servicios</p>
-          <v-btn color="primary" size="large" @click="showUpgradeDialog = true">
+          <v-btn :color="$vuetify.theme.current.dark ? 'white' : 'primary'" size="large" @click="showUpgradeDialog = true">
             Ver Planes Disponibles
           </v-btn>
         </v-card-text>
@@ -86,7 +86,7 @@
         <v-card-text>
           <div class="benefits-grid">
             <div v-for="benefit in getPlanBenefits(currentMembership.type)" :key="benefit" class="benefit-item">
-              <v-icon icon="mdi-check-circle" color="success" size="24"></v-icon>
+                              <v-icon icon="mdi-check-circle" :color="$vuetify.theme.current.dark ? 'white' : 'success'" size="24"></v-icon>
               <span class="benefit-text">{{ benefit }}</span>
             </div>
           </div>
@@ -115,14 +115,14 @@
               <p class="plan-description">{{ plan.description }}</p>
               <div class="plan-features">
                 <div v-for="feature in plan.features" :key="feature" class="feature-item">
-                  <v-icon icon="mdi-check" color="success" size="16"></v-icon>
+                  <v-icon icon="mdi-check" :color="$vuetify.theme.current.dark ? 'white' : 'success'" size="24"></v-icon>
                   <span>{{ feature }}</span>
                 </div>
               </div>
               <div class="plan-actions">
                 <v-btn 
                   v-if="currentMembership?.type === plan.id"
-                  color="success"
+                  :color="$vuetify.theme.current.dark ? 'white' : 'success'"
                   variant="outlined"
                   disabled
                 >
@@ -130,7 +130,7 @@
                 </v-btn>
                 <v-btn 
                   v-else
-                  color="primary"
+                  :color="$vuetify.theme.current.dark ? 'white' : 'primary'"
                   @click="selectPlan(plan)"
                 >
                   Seleccionar Plan
@@ -190,7 +190,7 @@
             Cancelar
           </v-btn>
           <v-btn 
-            color="primary" 
+            :color="$vuetify.theme.current.dark ? 'white' : 'primary'" 
             @click="renewMembership"
             :loading="membershipsStore.loading"
           >
@@ -221,7 +221,7 @@
             Cancelar
           </v-btn>
           <v-btn 
-            color="primary" 
+            :color="$vuetify.theme.current.dark ? 'white' : 'primary'" 
             @click="changePlan"
             :loading="membershipsStore.loading"
             :disabled="!selectedPlanId"
@@ -245,7 +245,7 @@
             No, mantener
           </v-btn>
           <v-btn 
-            color="error" 
+            :color="$vuetify.theme.current.dark ? 'white' : 'error'" 
             @click="cancelMembership"
             :loading="membershipsStore.loading"
           >

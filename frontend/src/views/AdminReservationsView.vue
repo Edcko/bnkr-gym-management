@@ -1,6 +1,9 @@
 <template>
   <div class="admin-reservations">
     <v-container fluid>
+      <!-- Breadcrumbs de navegación -->
+      <AdminBreadcrumbs current-module="Gestión de Reservas" />
+      
       <!-- Header -->
       <v-row>
         <v-col cols="12">
@@ -441,6 +444,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useReservationsStore, type Reservation, type CreateReservationData, type UpdateReservationData } from '@/stores/reservations'
 import { useToast } from '@/stores/toast'
 import { api } from '@/utils/api'
+import AdminBreadcrumbs from '@/components/AdminBreadcrumbs.vue'
 
 const reservationsStore = useReservationsStore()
 const toast = useToast()

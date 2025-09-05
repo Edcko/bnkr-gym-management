@@ -1,6 +1,9 @@
 <template>
   <div class="admin-clients">
     <v-container fluid>
+      <!-- Breadcrumbs de navegación -->
+      <AdminBreadcrumbs current-module="Gestión de Clientes" />
+      
       <!-- Header -->
       <v-row>
         <v-col cols="12">
@@ -126,6 +129,11 @@
                   :text="item.isActive ? 'Activo' : 'Inactivo'"
                   size="small"
                 />
+              </template>
+
+              <!-- Fecha de registro Column -->
+              <template v-slot:item.createdAt="{ item }">
+                {{ formatDate(item.createdAt) }}
               </template>
 
               <!-- Actions Column -->
@@ -385,6 +393,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useClientsStore, type Client, type CreateClientData, type UpdateClientData } from '@/stores/clients'
 import { useToast } from '@/stores/toast'
+import { formatDate } from '@/utils/dateFormat'
+import AdminBreadcrumbs from '@/components/AdminBreadcrumbs.vue'
 
 const clientsStore = useClientsStore()
 const toast = useToast()
@@ -592,9 +602,6 @@ const clearForm = () => {
   selectedClient.value = null
 }
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('es-ES')
-}
 
 // Lifecycle
 onMounted(async () => {

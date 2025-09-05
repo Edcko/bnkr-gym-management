@@ -25,3 +25,5 @@ router.get('/classes', ReportsController.getClassReport)
 router.get('/users', ReportsController.getUserReport)
 
 export default router
+
+

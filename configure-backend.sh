@@ -142,3 +142,5 @@ echo "🔍 Verificaciones recomendadas:"
 echo "   1. Probar login en: http://${REMOTE_HOST}"
 echo "   2. Verificar API en: http://${REMOTE_HOST}:3001/api/health"
 echo "   3. Revisar logs: pm2 logs bnkr-backend"
+
+

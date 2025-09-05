@@ -1,6 +1,9 @@
 <template>
   <div class="admin-employees">
     <v-container fluid>
+      <!-- Breadcrumbs de navegación -->
+      <AdminBreadcrumbs current-module="Gestión de Empleados" />
+      
       <!-- Header -->
       <v-row>
         <v-col cols="12">
@@ -159,6 +162,11 @@
                   :text="item.isActive ? 'Activo' : 'Inactivo'"
                   size="small"
                 />
+              </template>
+
+              <!-- Fecha de registro Column -->
+              <template v-slot:item.createdAt="{ item }">
+                {{ formatDate(item.createdAt) }}
               </template>
 
               <!-- Actions Column -->
@@ -492,6 +500,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useEmployeesStore, type Employee, type CreateEmployeeData, type UpdateEmployeeData } from '@/stores/employees'
 import { useToast } from '@/stores/toast'
+import { formatDate } from '@/utils/dateFormat'
+import AdminBreadcrumbs from '@/components/AdminBreadcrumbs.vue'
 
 const employeesStore = useEmployeesStore()
 const toast = useToast()
@@ -788,9 +798,6 @@ const clearForm = () => {
   selectedEmployee.value = null
 }
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('es-ES')
-}
 
 // Lifecycle
 onMounted(async () => {

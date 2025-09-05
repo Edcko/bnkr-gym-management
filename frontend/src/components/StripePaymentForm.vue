@@ -2,7 +2,7 @@
   <div class="stripe-payment-form">
     <v-card>
       <v-card-title class="d-flex align-center">
-        <v-icon class="mr-2" color="primary">mdi-credit-card</v-icon>
+        <v-icon class="mr-2" :color="$vuetify.theme.current.dark ? 'white' : 'primary'">mdi-credit-card</v-icon>
         Pago con Tarjeta
       </v-card-title>
       
@@ -15,7 +15,7 @@
         </div>
 
         <div v-if="loading" class="text-center py-4">
-          <v-progress-circular indeterminate color="primary" size="32" />
+          <v-progress-circular indeterminate :color="$vuetify.theme.current.dark ? 'white' : 'primary'" size="32" />
           <p class="mt-2">Procesando pago...</p>
         </div>
 
@@ -38,7 +38,7 @@
 
           <!-- Payment Button -->
           <v-btn
-            color="primary"
+            :color="$vuetify.theme.current.dark ? 'white' : 'primary'"
             size="large"
             block
             :loading="processing"
@@ -51,7 +51,7 @@
 
           <!-- Security Notice -->
           <div class="security-notice mt-4">
-            <v-icon size="small" color="success" class="mr-1">mdi-shield-check</v-icon>
+            <v-icon size="small" :color="$vuetify.theme.current.dark ? 'white' : 'success'" class="mr-1">mdi-shield-check</v-icon>
             <span class="text-caption text-medium-emphasis">
               Tus datos están protegidos con encriptación SSL de 256 bits
             </span>
